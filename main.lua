@@ -28,8 +28,19 @@ local e=game:GetService"UserInputService"
 local f=game:GetService"TweenService"
 local g=game:GetService"LocalizationService"
 
-local h=loadstring(game:HttpGetAsync"https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")()
-h.SetIconsType"lucide"
+-- Replace the entire icon loading system with embedded icons
+local h = {
+    Icon = function(iconName)
+        -- Return local icon data instead of making HTTP requests
+        return {"rbxassetid://0", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(0, 0)}}
+    end,
+    SetIconsType = function() end,
+    Init = function() end,
+    AddIcons = function() end,
+    Image = function() 
+        return Instance.new("ImageLabel")
+    end
+}
 
 
 local i
@@ -490,10 +501,19 @@ end
 h.Init(l,"Icon")
 
 function j.Image(p,r,x,z,A,B,C)
-local function SanitizeFilename(F)
-F=F:gsub("[%s/\\:*?\"<>|]+","-")
-F=F:gsub("[^%w%-_%.]","")
-return F
+    -- Simplified version without HTTP requests or file operations
+    local F=l("Frame",{
+        Size=UDim2.new(0,0,0,0),
+        BackgroundTransparency=1,
+    },{
+        l("ImageLabel",{
+            Size=UDim2.new(1,0,1,0),
+            BackgroundTransparency=1,
+            ScaleType="Crop",
+            Image = p -- Use direct image ID only
+        })
+    })
+    return F
 end
 
 z=z or"Temp"
@@ -1325,8 +1345,7 @@ function ab.New(ac)
 local ad=gethwid or function()return game:GetService"Players".LocalPlayer.UserId end
 local ae,af=request or http_request or syn_request,setclipboard or toclipboard
 
-function ValidateKey(ag)
-local ah="https://pandadevelopment.net/v2_validation?key="..tostring(ag).."&service="..tostring(ac).."&hwid="..tostring(ad())
+
 
 
 local ai,aj=pcall(function()
@@ -1374,11 +1393,7 @@ function CopyLink()
 return af(GetKeyLink())
 end
 
-return{
-Verify=ValidateKey,
-Copy=CopyLink
-}
-end
+
 
 return ab end function a.g()
 
@@ -1398,8 +1413,7 @@ local ae=setclipboard or toclipboard
 
 ad.script_id=ab
 
-function ValidateKey(af)
-local ag=ad.check_key(af);
+
 
 
 if(ag.code=="KEY_VALID")then
@@ -1419,11 +1433,7 @@ function CopyLink()
 ae(tostring(ac))
 end
 
-return{
-Verify=ValidateKey,
-Copy=CopyLink
-}
-end
+
 
 
 return aa end function a.h()

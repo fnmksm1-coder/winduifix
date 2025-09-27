@@ -1,11 +1,11 @@
 -- Main Window/Library component
 function UILibrary.MainLibrary()
-    local utils = loadModule('Utils')
-    local themes = loadModule('Themes')
-    local notificationSystem = loadModule('NotificationSystem')
-    local dialogModule = loadModule('Dialog')
-    local popupModule = loadModule('Popup')
-    local keySystemModule = loadModule('KeySystem')
+    local utils = UILibrary.Utils() -- Call function instead of using loadModule
+    local themes = UILibrary.Themes() -- Call function instead of using loadModule
+    local notificationSystem = UILibrary.NotificationSystem() -- Direct call
+    local dialogModule = UILibrary.Dialog() -- Direct call  
+    local popupModule = UILibrary.Popup() -- Direct call
+    local keySystemModule = UILibrary.KeySystem() -- Direct call
     
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
@@ -80,7 +80,7 @@ end
 
 -- Additional utility components
 function UILibrary.ListButton()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
     
@@ -182,7 +182,7 @@ function UILibrary.ListButton()
 end
 
 function UILibrary.ScrollBar()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
     
@@ -359,7 +359,7 @@ function UILibrary.ScrollBar()
 end
 
 function UILibrary.Tag()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
     
@@ -500,7 +500,7 @@ end
 
 -- Config Management System
 function UILibrary.ConfigManager()
-    local crypto = loadModule('CryptoUtils')
+    local crypto = UILibrary.CryptoUtils() -- Direct call
     
     local configManager = {
         Folder = nil,
@@ -755,6 +755,14 @@ UILibrary.ScrollBar = UILibrary.ScrollBar
 UILibrary.Tag = UILibrary.Tag
 UILibrary.ConfigManager = UILibrary.ConfigManager
 
+-- Initialize loadModule function after all modules are defined
+loadModule = function(moduleName)
+    if not cache[moduleName] then 
+        cache[moduleName] = {content = UILibrary[moduleName]()}
+    end
+    return cache[moduleName].content
+end
+
 -- Export the main library with anticheat-safe initialization
 local function initializeLibrary()
     -- Anti-detection delay
@@ -782,7 +790,7 @@ local function initializeLibrary()
     local MainInterface = {}
     
     function MainInterface.New(config)
-        local mainLib = loadModule('MainLibrary')
+        local mainLib = UILibrary.MainLibrary() -- Direct call
         return mainLib.New(config)
     end
     
@@ -811,13 +819,8 @@ return initializeLibrary()--[[
 local UILibrary = {}
 local cache = {}
 
--- Load system with safer caching
-local function loadModule(moduleName)
-    if not cache[moduleName] then 
-        cache[moduleName] = {content = UILibrary[moduleName]()}
-    end
-    return cache[moduleName].content
-end
+-- Load system with safer caching (defined after all modules)
+local loadModule
 
 -- Core Services - using standard names instead of single letters
 local Services = {
@@ -1439,7 +1442,7 @@ end
 
 -- Notification system
 function UILibrary.NotificationSystem()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call instead of loadModule
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
 
@@ -1882,7 +1885,7 @@ end
 
 -- Key system modules (safer implementations)
 function UILibrary.PlatoBoost()
-    local crypto = loadModule('CryptoUtils')
+    local crypto = UILibrary.CryptoUtils() -- Direct call
     local keySystem = {}
 
     function keySystem.New(serviceId, secret)
@@ -2049,7 +2052,7 @@ function UILibrary.PlatoBoost()
 end
 
 function UILibrary.PandaDevelopment()
-    local crypto = loadModule('CryptoUtils')
+    local crypto = UILibrary.CryptoUtils() -- Direct call
     local keySystem = {}
 
     function keySystem.New(serviceId)
@@ -2166,19 +2169,19 @@ function UILibrary.KeySystemServices()
             Name = "Platoboost",
             Icon = "rbxassetid://75920162824531",
             Args = {"ServiceId", "Secret"},
-            New = loadModule('PlatoBoost').New
+            New = UILibrary.PlatoBoost().New -- Direct reference
         },
         pandadevelopment = {
             Name = "Panda Development", 
             Icon = "panda",
             Args = {"ServiceId"},
-            New = loadModule('PandaDevelopment').New
+            New = UILibrary.PandaDevelopment().New -- Direct reference
         },
         luarmor = {
             Name = "Luarmor",
             Icon = "rbxassetid://130918283130165",
             Args = {"ScriptId", "Discord"},
-            New = loadModule('Luarmor').New
+            New = UILibrary.Luarmor().New -- Direct reference
         },
     }
 end
@@ -2204,7 +2207,7 @@ end
 
 -- Button component
 function UILibrary.Button()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
 
@@ -2344,7 +2347,7 @@ end
 
 -- Input/TextBox component
 function UILibrary.Input()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
 
@@ -2457,7 +2460,7 @@ end
 
 -- Dialog/Modal system
 function UILibrary.Dialog()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
 
@@ -2602,11 +2605,11 @@ end
 
 -- Popup/Modal component
 function UILibrary.Popup()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
-    local dialogModule = loadModule('Dialog')
-    local buttonModule = loadModule('Button')
+    local dialogModule = UILibrary.Dialog() -- Direct call
+    local buttonModule = UILibrary.Button() -- Direct call
 
     local popup = {}
 
@@ -2786,12 +2789,12 @@ end
 
 -- Key System UI
 function UILibrary.KeySystem()
-    local utils = loadModule('Utils')
+    local utils = UILibrary.Utils() -- Direct call
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
-    local dialogModule = loadModule('Dialog')
-    local buttonModule = loadModule('Button')
-    local inputModule = loadModule('Input')
+    local dialogModule = UILibrary.Dialog() -- Direct call
+    local buttonModule = UILibrary.Button() -- Direct call
+    local inputModule = UILibrary.Input() -- Direct call
 
     local keySystem = {}
 

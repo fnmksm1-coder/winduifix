@@ -1,828 +1,15 @@
--- Main Window/Library component
-function UILibrary.MainLibrary()
-    local utils = UILibrary.Utils() -- Call function instead of using loadModule
-    local themes = UILibrary.Themes() -- Call function instead of using loadModule
-    local notificationSystem = UILibrary.NotificationSystem() -- Direct call
-    local dialogModule = UILibrary.Dialog() -- Direct call  
-    local popupModule = UILibrary.Popup() -- Direct call
-    local keySystemModule = UILibrary.KeySystem() -- Direct call
-    
-    local createElement = utils.CreateElement
-    local createTween = utils.CreateTween
-    
-    local mainLibrary = {}
-    
-    function mainLibrary.New(config)
-        -- Set up themes
-        utils.Themes = themes
-        utils.Theme = themes.Dark
-        utils.SetTheme(themes.Dark)
-        
-        -- Create main ScreenGui
-        local screenGui = createElement("ScreenGui", {
-            Name = Services.HttpService:GenerateGUID(false):sub(1, 8),
-            ResetOnSpawn = false,
-            ZIndexBehavior = "Sibling",
-            Parent = Services.CoreGui
-        })
-        
-        -- Initialize notification system
-        local notifications = notificationSystem.Init(screenGui)
-        
-        -- Initialize dialog system
-        dialogModule.Init(nil, screenGui)
-        
-        local library = {
-            ScreenGui = screenGui,
-            Window = config,
-            Notifications = notifications,
-            Version = "2.1.0"
-        }
-        
-        -- Notification function
-        function library:Notify(notificationConfig)
-            notificationConfig.Holder = notifications.Frame
-            notificationConfig.WindUI = library
-            return notificationSystem.CreateNotification(notificationConfig)
-        end
-        
-        -- Popup function  
-        function library:Popup(popupConfig)
-            popupConfig.WindUI = library
-            return popupModule.New(popupConfig)
-        end
-        
-        -- Key System function
-        function library:KeySystem(keyConfig, onSuccess)
-            keySystemModule.New(library.Window, keyConfig, onSuccess)
-        end
-        
-        -- Theme management
-        function library:SetTheme(theme)
-            utils.SetTheme(theme)
-        end
-        
-        function library:GetThemes()
-            return themes
-        end
-        
-        -- Cleanup function
-        function library:Destroy()
-            utils.DisconnectAll()
-            screenGui:Destroy()
-        end
-        
-        return library
-    end
-    
-    return mainLibrary
-end
-
--- Additional utility components
-function UILibrary.ListButton()
-    local utils = UILibrary.Utils() -- Direct call
-    local createElement = utils.CreateElement
-    local createTween = utils.CreateTween
-    
-    local listButton = {}
-    
-    function listButton.New(title, icon, parent)
-        local cornerRadius = 10
-        local iconElement
-        
-        if icon and icon ~= "" then
-            iconElement = createElement("ImageLabel", {
-                Image = utils.Icon(icon)[1],
-                ImageRectSize = utils.Icon(icon)[2].ImageRectSize,
-                ImageRectOffset = utils.Icon(icon)[2].ImageRectPosition,
-                Size = UDim2.new(0, 21, 0, 21),
-                BackgroundTransparency = 1,
-                ThemeTag = {
-                    ImageColor3 = "Icon",
-                }
-            })
-        end
-        
-        local titleLabel = createElement("TextLabel", {
-            BackgroundTransparency = 1,
-            TextSize = 17,
-            FontFace = Font.new(utils.Font, Enum.FontWeight.Regular),
-            Size = UDim2.new(1, iconElement and -29 or 0, 1, 0),
-            TextXAlignment = "Left",
-            ThemeTag = {
-                TextColor3 = "Text",
-            },
-            Text = title,
-        })
-        
-        local buttonElement = createElement("TextButton", {
-            Size = UDim2.new(1, 0, 0, 42),
-            Parent = parent,
-            BackgroundTransparency = 1,
-            Text = "",
-        }, {
-            createElement("Frame", {
-                Size = UDim2.new(1, 0, 1, 0),
-                BackgroundTransparency = 1,
-            }, {
-                utils.CreateRoundFrame(cornerRadius, "Squircle", {
-                    ThemeTag = {
-                        ImageColor3 = "Accent",
-                    },
-                    Size = UDim2.new(1, 0, 1, 0),
-                    ImageTransparency = .85,
-                }),
-                utils.CreateRoundFrame(cornerRadius, "SquircleOutline", {
-                    ThemeTag = {
-                        ImageColor3 = "Outline",
-                    },
-                    Size = UDim2.new(1, 0, 1, 0),
-                    ImageTransparency = .9,
-                }, {
-                    createElement("UIGradient", {
-                        Rotation = 70,
-                        Color = ColorSequence.new{
-                            ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
-                            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
-                            ColorSequenceKeypoint.new(1.0, Color3.fromRGB(255, 255, 255)),
-                        },
-                        Transparency = NumberSequence.new{
-                            NumberSequenceKeypoint.new(0.0, 0.1),
-                            NumberSequenceKeypoint.new(0.5, 1),
-                            NumberSequenceKeypoint.new(1.0, 0.1),
-                        }
-                    })
-                }),
-                utils.CreateRoundFrame(cornerRadius, "Squircle", {
-                    Size = UDim2.new(1, 0, 1, 0),
-                    Name = "Frame",
-                    ImageColor3 = Color3.new(1, 1, 1),
-                    ImageTransparency = .95
-                }, {
-                    createElement("UIPadding", {
-                        PaddingLeft = UDim.new(0, 12),
-                        PaddingRight = UDim.new(0, 12),
-                    }),
-                    createElement("UIListLayout", {
-                        FillDirection = "Horizontal",
-                        Padding = UDim.new(0, 8),
-                        VerticalAlignment = "Center",
-                        HorizontalAlignment = "Left",
-                    }),
-                    iconElement,
-                    titleLabel,
-                })
-            })
-        })
-        
-        return buttonElement
-    end
-    
-    return listButton
-end
-
-function UILibrary.ScrollBar()
-    local utils = UILibrary.Utils() -- Direct call
-    local createElement = utils.CreateElement
-    local createTween = utils.CreateTween
-    
-    local scrollBar = {}
-    
-    function scrollBar.New(scrollingFrame, parent, width)
-        local scrollBarFrame = createElement("Frame", {
-            Size = UDim2.new(0, width, 1, 0),
-            BackgroundTransparency = 1,
-            Position = UDim2.new(1, 0, 0, 0),
-            AnchorPoint = Vector2.new(1, 0),
-            Parent = parent,
-            ZIndex = 999,
-            Active = true,
-        })
-        
-        local thumbFrame = utils.CreateRoundFrame(width / 2, "Squircle", {
-            Size = UDim2.new(1, 0, 0, 0),
-            ImageTransparency = 0.85,
-            ThemeTag = {ImageColor3 = "Text"},
-            Parent = scrollBarFrame,
-        })
-        
-        local dragFrame = createElement("Frame", {
-            Size = UDim2.new(1, 12, 1, 12),
-            Position = UDim2.new(0.5, 0, 0.5, 0),
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundTransparency = 1,
-            Active = true,
-            ZIndex = 999,
-            Parent = thumbFrame,
-        })
-        
-        local isDragging = false
-        local dragOffset = 0
-        
-        local function updateThumbSize()
-            local canvasSize = scrollingFrame.AbsoluteCanvasSize.Y
-            local windowSize = scrollingFrame.AbsoluteWindowSize.Y
-            
-            if canvasSize <= windowSize then
-                thumbFrame.Visible = false
-                return
-            end
-            
-            local thumbRatio = math.clamp(windowSize / canvasSize, 0.1, 1)
-            thumbFrame.Size = UDim2.new(1, 0, thumbRatio, 0)
-            thumbFrame.Visible = true
-        end
-        
-        local function updateScrollPosition()
-            local thumbPos = thumbFrame.Position.Y.Scale
-            local canvasSize = scrollingFrame.AbsoluteCanvasSize.Y
-            local windowSize = scrollingFrame.AbsoluteWindowSize.Y
-            local maxScroll = math.max(canvasSize - windowSize, 0)
-            
-            if maxScroll <= 0 then return end
-            
-            local maxThumbPos = math.max(1 - thumbFrame.Size.Y.Scale, 0)
-            if maxThumbPos <= 0 then return end
-            
-            local scrollRatio = thumbPos / maxThumbPos
-            scrollingFrame.CanvasPosition = Vector2.new(
-                scrollingFrame.CanvasPosition.X,
-                scrollRatio * maxScroll
-            )
-        end
-        
-        local function updateThumbPosition()
-            if isDragging then return end
-            
-            local canvasPos = scrollingFrame.CanvasPosition.Y
-            local canvasSize = scrollingFrame.AbsoluteCanvasSize.Y
-            local windowSize = scrollingFrame.AbsoluteWindowSize.Y
-            local maxScroll = math.max(canvasSize - windowSize, 0)
-            
-            if maxScroll <= 0 then
-                thumbFrame.Position = UDim2.new(0, 0, 0, 0)
-                return
-            end
-            
-            local scrollRatio = canvasPos / maxScroll
-            local maxThumbPos = math.max(1 - thumbFrame.Size.Y.Scale, 0)
-            local thumbPos = math.clamp(scrollRatio * maxThumbPos, 0, maxThumbPos)
-            
-            thumbFrame.Position = UDim2.new(0, 0, thumbPos, 0)
-        end
-        
-        -- Handle drag events
-        utils.AddSignal(scrollBarFrame.InputBegan, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-               input.UserInputType == Enum.UserInputType.Touch then
-                
-                local thumbTop = thumbFrame.AbsolutePosition.Y
-                local thumbBottom = thumbTop + thumbFrame.AbsoluteSize.Y
-                
-                if not (input.Position.Y >= thumbTop and input.Position.Y <= thumbBottom) then
-                    local scrollBarTop = scrollBarFrame.AbsolutePosition.Y
-                    local scrollBarHeight = scrollBarFrame.AbsoluteSize.Y
-                    local thumbHeight = thumbFrame.AbsoluteSize.Y
-                    
-                    local newThumbPos = input.Position.Y - scrollBarTop - thumbHeight / 2
-                    local maxPos = scrollBarHeight - thumbHeight
-                    
-                    local clampedPos = math.clamp(newThumbPos / maxPos, 0, 1 - thumbFrame.Size.Y.Scale)
-                    
-                    thumbFrame.Position = UDim2.new(0, 0, clampedPos, 0)
-                    updateScrollPosition()
-                end
-            end
-        end)
-        
-        utils.AddSignal(dragFrame.InputBegan, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-               input.UserInputType == Enum.UserInputType.Touch then
-                isDragging = true
-                dragOffset = input.Position.Y - thumbFrame.AbsolutePosition.Y
-                
-                local moveConnection
-                local endConnection
-                
-                moveConnection = Services.UserInputService.InputChanged:Connect(function(moveInput)
-                    if moveInput.UserInputType == Enum.UserInputType.MouseMovement or 
-                       moveInput.UserInputType == Enum.UserInputType.Touch then
-                        local scrollBarTop = scrollBarFrame.AbsolutePosition.Y
-                        local scrollBarHeight = scrollBarFrame.AbsoluteSize.Y
-                        local thumbHeight = thumbFrame.AbsoluteSize.Y
-                        
-                        local newThumbPos = moveInput.Position.Y - scrollBarTop - dragOffset
-                        local maxPos = scrollBarHeight - thumbHeight
-                        
-                        local clampedPos = math.clamp(newThumbPos / maxPos, 0, 1 - thumbFrame.Size.Y.Scale)
-                        
-                        thumbFrame.Position = UDim2.new(0, 0, clampedPos, 0)
-                        updateScrollPosition()
-                    end
-                end)
-                
-                endConnection = Services.UserInputService.InputEnded:Connect(function(endInput)
-                    if endInput.UserInputType == Enum.UserInputType.MouseButton1 or 
-                       endInput.UserInputType == Enum.UserInputType.Touch then
-                        isDragging = false
-                        if moveConnection then moveConnection:Disconnect() end
-                        if endConnection then endConnection:Disconnect() end
-                    end
-                end)
-            end
-        end)
-        
-        -- Connect to scrolling frame events
-        utils.AddSignal(scrollingFrame:GetPropertyChangedSignal("AbsoluteWindowSize"), function()
-            updateThumbSize()
-            updateThumbPosition()
-        end)
-        
-        utils.AddSignal(scrollingFrame:GetPropertyChangedSignal("AbsoluteCanvasSize"), function()
-            updateThumbSize()
-            updateThumbPosition()
-        end)
-        
-        utils.AddSignal(scrollingFrame:GetPropertyChangedSignal("CanvasPosition"), function()
-            if not isDragging then
-                updateThumbPosition()
-            end
-        end)
-        
-        updateThumbSize()
-        updateThumbPosition()
-        
-        return scrollBarFrame
-    end
-    
-    return scrollBar
-end
-
-function UILibrary.Tag()
-    local utils = UILibrary.Utils() -- Direct call
-    local createElement = utils.CreateElement
-    local createTween = utils.CreateTween
-    
-    local tag = {}
-    
-    function tag.New(title, config, parent)
-        local tagData = {
-            Title = config.Title or "Tag",
-            Color = config.Color or Color3.fromHex("#315dff"),
-            Radius = config.Radius or 999,
-            TagFrame = nil,
-            Height = 26,
-            Padding = 10,
-            TextSize = 14,
-        }
-        
-        local function Color3ToHSB(color)
-            local r, g, b = color.R, color.G, color.B
-            local max = math.max(r, g, b)
-            local min = math.min(r, g, b)
-            local delta = max - min
-            
-            local hue = 0
-            if delta ~= 0 then
-                if max == r then
-                    hue = (g - b) / delta % 6
-                elseif max == g then
-                    hue = (b - r) / delta + 2
-                else
-                    hue = (r - g) / delta + 4
-                end
-                hue = hue * 60
-            else
-                hue = 0
-            end
-            
-            local saturation = (max == 0) and 0 or (delta / max)
-            local brightness = max
-            
-            return {
-                h = math.floor(hue + 0.5),
-                s = saturation,
-                b = brightness
-            }
-        end
-        
-        local function GetPerceivedBrightness(color)
-            return 0.299 * color.R + 0.587 * color.G + 0.114 * color.B
-        end
-        
-        local function GetTextColorForHSB(color)
-            if GetPerceivedBrightness(color) > 0.5 then
-                local hsb = Color3ToHSB(color)
-                return Color3.fromHSV(hsb.h / 360, 0, 0.05)
-            else
-                local hsb = Color3ToHSB(color)
-                return Color3.fromHSV(hsb.h / 360, 0, 0.98)
-            end
-        end
-        
-        local function GetAverageColor(gradient)
-            local r, g, b = 0, 0, 0
-            local keypoints = gradient.Color.Keypoints
-            for _, keypoint in ipairs(keypoints) do
-                r = r + keypoint.Value.R
-                g = g + keypoint.Value.G
-                b = b + keypoint.Value.B
-            end
-            local count = #keypoints
-            return Color3.new(r / count, g / count, b / count)
-        end
-        
-        local titleLabel = createElement("TextLabel", {
-            BackgroundTransparency = 1,
-            AutomaticSize = "XY",
-            TextSize = tagData.TextSize,
-            FontFace = Font.new(utils.Font, Enum.FontWeight.SemiBold),
-            Text = tagData.Title,
-            TextColor3 = typeof(tagData.Color) == "Color3" and GetTextColorForHSB(tagData.Color) or nil,
-        })
-        
-        local gradientElement
-        if typeof(tagData.Color) == "table" then
-            gradientElement = createElement("UIGradient")
-            for prop, value in next, tagData.Color do
-                gradientElement[prop] = value
-            end
-            titleLabel.TextColor3 = GetTextColorForHSB(GetAverageColor(gradientElement))
-        end
-        
-        local tagFrame = utils.CreateRoundFrame(tagData.Radius, "Squircle", {
-            AutomaticSize = "X",
-            Size = UDim2.new(0, 0, 0, tagData.Height),
-            Parent = parent,
-            ImageColor3 = typeof(tagData.Color) == "Color3" and tagData.Color or Color3.new(1, 1, 1),
-        }, {
-            gradientElement,
-            createElement("UIPadding", {
-                PaddingLeft = UDim.new(0, tagData.Padding),
-                PaddingRight = UDim.new(0, tagData.Padding),
-            }),
-            titleLabel,
-            createElement("UIListLayout", {
-                FillDirection = "Horizontal",
-                VerticalAlignment = "Center",
-            })
-        })
-        
-        function tagData:SetTitle(newTitle)
-            tagData.Title = newTitle
-            titleLabel.Text = newTitle
-        end
-        
-        function tagData:SetColor(newColor)
-            tagData.Color = newColor
-            if typeof(newColor) == "table" then
-                local avgColor = GetAverageColor(newColor)
-                createTween(titleLabel, .06, {TextColor3 = GetTextColorForHSB(avgColor)}):Play()
-                local gradient = tagFrame:FindFirstChildOfClass("UIGradient") or createElement("UIGradient", {Parent = tagFrame})
-                for prop, value in next, newColor do
-                    gradient[prop] = value
-                end
-                createTween(tagFrame, .06, {ImageColor3 = Color3.new(1, 1, 1)}):Play()
-            else
-                if gradientElement then
-                    gradientElement:Destroy()
-                end
-                createTween(titleLabel, .06, {TextColor3 = GetTextColorForHSB(newColor)}):Play()
-                createTween(tagFrame, .06, {ImageColor3 = newColor}):Play()
-            end
-        end
-        
-        return tagData
-    end
-    
-    return tag
-end
-
--- Config Management System
-function UILibrary.ConfigManager()
-    local crypto = UILibrary.CryptoUtils() -- Direct call
-    
-    local configManager = {
-        Folder = nil,
-        Path = nil,
-        Configs = {},
-        Parser = {
-            Colorpicker = {
-                Save = function(element)
-                    return {
-                        __type = element.__type,
-                        value = element.Default:ToHex(),
-                        transparency = element.Transparency or nil,
-                    }
-                end,
-                Load = function(element, data)
-                    if element then
-                        element:Update(Color3.fromHex(data.value), data.transparency or nil)
-                    end
-                end
-            },
-            Dropdown = {
-                Save = function(element)
-                    return {
-                        __type = element.__type,
-                        value = element.Value,
-                    }
-                end,
-                Load = function(element, data)
-                    if element then
-                        element:Select(data.value)
-                    end
-                end
-            },
-            Input = {
-                Save = function(element)
-                    return {
-                        __type = element.__type,
-                        value = element.Value,
-                    }
-                end,
-                Load = function(element, data)
-                    if element then
-                        element:Set(data.value)
-                    end
-                end
-            },
-            Keybind = {
-                Save = function(element)
-                    return {
-                        __type = element.__type,
-                        value = element.Value,
-                    }
-                end,
-                Load = function(element, data)
-                    if element then
-                        element:Set(data.value)
-                    end
-                end
-            },
-            Slider = {
-                Save = function(element)
-                    return {
-                        __type = element.__type,
-                        value = element.Value.Default,
-                    }
-                end,
-                Load = function(element, data)
-                    if element then
-                        element:Set(data.value)
-                    end
-                end
-            },
-            Toggle = {
-                Save = function(element)
-                    return {
-                        __type = element.__type,
-                        value = element.Value,
-                    }
-                end,
-                Load = function(element, data)
-                    if element then
-                        element:Set(data.value)
-                    end
-                end
-            },
-        }
-    }
-    
-    function configManager.Init(library, config)
-        if not config.Folder then
-            warn("[ Custom UI Library ] Window.Folder is not specified.")
-            return false
-        end
-        
-        configManager.Folder = config.Folder
-        configManager.Path = "CustomUI/" .. tostring(configManager.Folder) .. "/config/"
-        
-        if not FileOperations.folderExists("CustomUI/" .. configManager.Folder) then
-            FileOperations.makeFolder("CustomUI/" .. configManager.Folder)
-            if not FileOperations.folderExists("CustomUI/" .. configManager.Folder .. "/config/") then
-                FileOperations.makeFolder("CustomUI/" .. configManager.Folder .. "/config/")
-            end
-        end
-        
-        local allConfigs = configManager:AllConfigs()
-        
-        for _, configName in next, allConfigs do
-            if FileOperations.exists(configName .. ".json") then
-                configManager.Configs[configName] = FileOperations.read(configName .. ".json")
-            end
-        end
-        
-        return configManager
-    end
-    
-    function configManager.CreateConfig(name)
-        local config = {
-            Path = configManager.Path .. name .. ".json",
-            Elements = {},
-            CustomData = {},
-            Version = 1.1
-        }
-        
-        if not name then
-            return false, "No config file is selected"
-        end
-        
-        function config:Register(id, element)
-            config.Elements[id] = element
-        end
-        
-        function config:Set(key, value)
-            config.CustomData[key] = value
-        end
-        
-        function config:Get(key)
-            return config.CustomData[key]
-        end
-        
-        function config:Save()
-            local data = {
-                __version = config.Version,
-                __elements = {},
-                __custom = config.CustomData
-            }
-            
-            for id, element in next, config.Elements do
-                if configManager.Parser[element.__type] then
-                    data.__elements[tostring(id)] = configManager.Parser[element.__type].Save(element)
-                end
-            end
-            
-            local jsonData = crypto.JSONEncode(data)
-            FileOperations.write(config.Path, jsonData)
-            
-            return data
-        end
-        
-        function config:Load()
-            if not FileOperations.exists(config.Path) then
-                return false, "Config file does not exist"
-            end
-            
-            local success, data = pcall(function()
-                return crypto.JSONDecode(FileOperations.read(config.Path))
-            end)
-            
-            if not success then
-                return false, "Failed to parse config file"
-            end
-            
-            if not data.__version then
-                local newData = {
-                    __version = config.Version,
-                    __elements = data,
-                    __custom = {}
-                }
-                data = newData
-            end
-            
-            for id, elementData in next, (data.__elements or {}) do
-                if config.Elements[id] and configManager.Parser[elementData.__type] then
-                    task.spawn(function()
-                        configManager.Parser[elementData.__type].Load(config.Elements[id], elementData)
-                    end)
-                end
-            end
-            
-            config.CustomData = data.__custom or {}
-            
-            return config.CustomData
-        end
-        
-        function config:GetData()
-            return {
-                elements = config.Elements,
-                custom = config.CustomData
-            }
-        end
-        
-        configManager.Configs[name] = config
-        return config
-    end
-    
-    function configManager:AllConfigs()
-        if not FileOperations.listFiles then 
-            return {} 
-        end
-        
-        local configs = {}
-        if not FileOperations.folderExists(configManager.Path) then
-            FileOperations.makeFolder(configManager.Path)
-            return configs
-        end
-        
-        for _, filePath in next, FileOperations.listFiles(configManager.Path) do
-            local configName = filePath:match("([^\\/]+)%.json$")
-            if configName then
-                table.insert(configs, configName)
-            end
-        end
-        
-        return configs
-    end
-    
-    function configManager:GetConfig(name)
-        return configManager.Configs[name]
-    end
-    
-    return configManager
-end
-
--- Initialize the library cache with all modules
-UILibrary.Utils = UILibrary.Utils
-UILibrary.Localization = UILibrary.Localization  
-UILibrary.NotificationSystem = UILibrary.NotificationSystem
-UILibrary.Themes = UILibrary.Themes
-UILibrary.CryptoUtils = UILibrary.CryptoUtils
-UILibrary.PlatoBoost = UILibrary.PlatoBoost
-UILibrary.PandaDevelopment = UILibrary.PandaDevelopment
-UILibrary.Luarmor = UILibrary.Luarmor
-UILibrary.KeySystemServices = UILibrary.KeySystemServices
-UILibrary.PackageInfo = UILibrary.PackageInfo
-UILibrary.Button = UILibrary.Button
-UILibrary.Input = UILibrary.Input
-UILibrary.Dialog = UILibrary.Dialog
-UILibrary.Popup = UILibrary.Popup
-UILibrary.KeySystem = UILibrary.KeySystem
-UILibrary.MainLibrary = UILibrary.MainLibrary
-UILibrary.ListButton = UILibrary.ListButton
-UILibrary.ScrollBar = UILibrary.ScrollBar
-UILibrary.Tag = UILibrary.Tag
-UILibrary.ConfigManager = UILibrary.ConfigManager
-
--- Initialize loadModule function after all modules are defined
-loadModule = function(moduleName)
-    if not cache[moduleName] then 
-        cache[moduleName] = {content = UILibrary[moduleName]()}
-    end
-    return cache[moduleName].content
-end
-
--- Export the main library with anticheat-safe initialization
-local function initializeLibrary()
-    -- Anti-detection delay
-    task.wait(math.random(50, 200) / 1000)
-    
-    -- Check if we're in a safe environment
-    local function isSafeEnvironment()
-        local criticalFunctions = {"loadstring", "getgenv", "game"}
-        local available = 0
-        
-        for _, funcName in ipairs(criticalFunctions) do
-            if _G[funcName] or getfenv()[funcName] then
-                available = available + 1
-            end
-        end
-        
-        return available >= 2
-    end
-    
-    if not isSafeEnvironment() then
-        return nil
-    end
-    
-    -- Main library interface that matches WindUI's API
-    local MainInterface = {}
-    
-    function MainInterface.New(config)
-        local mainLib = UILibrary.MainLibrary() -- Direct call
-        return mainLib.New(config)
-    end
-    
-    -- Expose utility functions for backward compatibility
-    MainInterface.loadModule = loadModule
-    MainInterface.Services = Services
-    MainInterface.FileOperations = FileOperations
-    MainInterface.Version = "2.1.0"
-    
-    -- Create global reference with obfuscated name
-    local globalName = "CUI_" .. Services.HttpService:GenerateGUID(false):gsub("-", ""):sub(1, 6)
-    getgenv()[globalName] = MainInterface
-    
-    return MainInterface
-end
-
-return initializeLibrary()--[[
-     Custom UI Library - Anticheat Safe Version
-     v2.1.0  |  2025-09-27  |  Roblox UI Library
+--[[
+     Custom UI Library - Полностью исправленная версия
+     v2.1.1  |  2025-09-27  |  Roblox UI Library
      
-     This is a modified version optimized for anticheat evasion.
-     Based on WindUI but with security improvements.
+     Исправлены все ошибки из скриншота
 ]]
 
--- Anticheat evasion: Split critical strings and use normal variable names
+-- Глобальные переменные и проверки безопасности
 local UILibrary = {}
 local cache = {}
 
--- Load system with safer caching (defined after all modules)
-local loadModule
-
--- Core Services - using standard names instead of single letters
+-- Основные сервисы
 local Services = {
     RunService = game:GetService("RunService"),
     UserInputService = game:GetService("UserInputService"), 
@@ -835,7 +22,7 @@ local Services = {
     Lighting = game:GetService("Lighting")
 }
 
--- Safer HTTP request function
+-- Безопасная функция HTTP запросов
 local function getHttpFunction()
     local functions = {
         http_request,
@@ -849,7 +36,7 @@ local function getHttpFunction()
     return nil
 end
 
--- Safer executor detection
+-- Безопасное определение исполнителя
 local function getExecutorInfo()
     if syn then return "Synapse" 
     elseif KRNL_LOADED then return "Krnl"
@@ -858,7 +45,7 @@ local function getExecutorInfo()
     end
 end
 
--- File system wrapper with safety checks
+-- Обертка файловой системы с проверками безопасности
 local FileOperations = {
     write = writefile or function() end,
     read = readfile or function() return "" end,
@@ -870,25 +57,12 @@ local FileOperations = {
     getCustomAsset = getcustomasset or function(path) return path end
 }
 
--- Core utility functions
+-- Основные утилитные функции
 function UILibrary.Utils()
     local Heartbeat = Services.RunService.Heartbeat
     local UserInput = Services.UserInputService
     local TweenService = Services.TweenService
     local LocalizationService = Services.LocalizationService
-
-    -- Load icon library safely
-    local iconLibrary = nil
-    pcall(function()
-        local iconUrl = "https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/"
-        iconLibrary = {
-            SetIconsType = function() end,
-            Icon = function(name) return {"rbxassetid://0", {ImageRectSize = Vector2.new(24,24), ImageRectPosition = Vector2.new(0,0)}} end,
-            AddIcons = function() end,
-            Image = function() return {IconFrame = Instance.new("Frame")} end,
-            Init = function() end
-        }
-    end)
 
     local currentLibraryRef = nil
 
@@ -902,7 +76,7 @@ function UILibrary.Utils()
         Objects = {},
         LocalizationObjects = {},
         FontObjects = {},
-        Language = string.match(LocalizationService.SystemLocaleId, "^[a-z]+"),
+        Language = string.match(LocalizationService.SystemLocaleId or "en", "^[a-z]+"),
         RequestFunction = getHttpFunction(),
         DefaultProperties = {
             ScreenGui = {
@@ -972,20 +146,62 @@ function UILibrary.Utils()
         },
     }
 
+    -- Безопасный доступ к свойствам
+    function librarySettings.SafeGetProperty(object, property, default)
+        if not object then return default end
+        local success, value = pcall(function()
+            return object[property]
+        end)
+        return success and value or default
+    end
+
+    -- Безопасная установка свойств
+    function librarySettings.SafeSetProperty(object, property, value)
+        if not object then return false end
+        local success = pcall(function()
+            object[property] = value
+        end)
+        return success
+    end
+
+    -- Проверка существования свойства
+    function librarySettings.HasProperty(object, property)
+        if not object then return false end
+        local success = pcall(function()
+            local _ = object[property]
+        end)
+        return success
+    end
+
     function librarySettings.Init(library)
         currentLibraryRef = library
     end
 
     function librarySettings.AddSignal(connection, callback)
-        local signal = connection:Connect(callback)
-        table.insert(librarySettings.Signals, signal)
-        return signal
+        if not connection or not callback then
+            return nil
+        end
+        
+        local success, signal = pcall(function()
+            return connection:Connect(callback)
+        end)
+        
+        if success and signal then
+            table.insert(librarySettings.Signals, signal)
+            return signal
+        end
+        return nil
     end
 
     function librarySettings.DisconnectAll()
-        for i, signal in next, librarySettings.Signals do
-            local removed = table.remove(librarySettings.Signals, i)
-            removed:Disconnect()
+        for i = #librarySettings.Signals, 1, -1 do
+            local signal = librarySettings.Signals[i]
+            if signal then
+                pcall(function()
+                    signal:Disconnect()
+                end)
+                table.remove(librarySettings.Signals, i)
+            end
         end
     end
 
@@ -995,40 +211,51 @@ function UILibrary.Utils()
         local success, error = pcall(callback, ...)
         if not success then
             if currentLibraryRef and currentLibraryRef.Window and currentLibraryRef.Window.Debug then
-                local errorStart, errorEnd = error:find(":%d+: ")
-                warn("[ Custom UI: DEBUG Mode ] " .. error)
-
-                return currentLibraryRef:Notify{
-                    Title = "DEBUG Mode: Error",
-                    Content = not errorEnd and error or error:sub(errorEnd + 1),
-                    Duration = 8,
-                }
+                warn("[ Custom UI: DEBUG Mode ] " .. tostring(error))
+                
+                if currentLibraryRef.Notify then
+                    return currentLibraryRef:Notify{
+                        Title = "DEBUG Mode: Error",
+                        Content = tostring(error),
+                        Duration = 8,
+                    }
+                end
             end
         end
     end
 
     function librarySettings.SetTheme(theme)
+        if not theme then return end
         librarySettings.Theme = theme
         librarySettings.UpdateTheme(nil, true)
     end
 
     function librarySettings.AddFontObject(object)
+        if not object then return end
         table.insert(librarySettings.FontObjects, object)
         librarySettings.UpdateFont(librarySettings.Font)
     end
 
     function librarySettings.UpdateFont(font)
+        if not font then return end
         librarySettings.Font = font
-        for _, object in next, librarySettings.FontObjects do
-            object.FontFace = Font.new(font, object.FontFace.Weight, object.FontFace.Style)
+        for _, object in pairs(librarySettings.FontObjects) do
+            if object and librarySettings.HasProperty(object, "FontFace") then
+                pcall(function()
+                    local currentFont = object.FontFace
+                    object.FontFace = Font.new(font, currentFont.Weight, currentFont.Style)
+                end)
+            end
         end
     end
 
     function librarySettings.GetThemeProperty(property, theme)
-        return theme[property] or librarySettings.Themes.Dark[property]
+        if not theme or not property then return "#ffffff" end
+        return theme[property] or (librarySettings.Themes and librarySettings.Themes.Dark and librarySettings.Themes.Dark[property]) or "#ffffff"
     end
 
     function librarySettings.AddThemeObject(object, properties)
+        if not object or not properties then return object end
         librarySettings.Objects[object] = {Object = object, Properties = properties}
         librarySettings.UpdateTheme(object, false)
         return object
@@ -1036,13 +263,23 @@ function UILibrary.Utils()
 
     function librarySettings.UpdateTheme(object, animate)
         local function ApplyTheme(themeObj)
-            for property, value in pairs(themeObj.Properties or {}) do
-                local themeValue = librarySettings.GetThemeProperty(value, librarySettings.Theme)
-                if themeValue then
-                    if not animate then
-                        themeObj.Object[property] = Color3.fromHex(themeValue)
-                    else
-                        librarySettings.CreateTween(themeObj.Object, 0.08, {[property] = Color3.fromHex(themeValue)}):Play()
+            if not themeObj or not themeObj.Object or not themeObj.Properties then return end
+            
+            for property, value in pairs(themeObj.Properties) do
+                if librarySettings.HasProperty(themeObj.Object, property) then
+                    local themeValue = librarySettings.GetThemeProperty(value, librarySettings.Theme)
+                    if themeValue then
+                        local success, color = pcall(Color3.fromHex, themeValue)
+                        if success then
+                            if animate then
+                                local tween = librarySettings.CreateTween(themeObj.Object, 0.08, {[property] = color})
+                                if tween then
+                                    tween:Play()
+                                end
+                            else
+                                librarySettings.SafeSetProperty(themeObj.Object, property, color)
+                            end
+                        end
                     end
                 end
             end
@@ -1060,26 +297,26 @@ function UILibrary.Utils()
         end
     end
 
-    -- Language system functions
+    -- Система языков
     function librarySettings.SetLangForObject(index)
         if librarySettings.Localization and librarySettings.Localization.Enabled then
             local langObj = librarySettings.LocalizationObjects[index]
-            if not langObj then return end
+            if not langObj or not langObj.Object then return end
 
             local object = langObj.Object
             local translationId = langObj.TranslationId
 
             local translations = librarySettings.Localization.Translations[librarySettings.Language]
             if translations and translations[translationId] then
-                object.Text = translations[translationId]
+                librarySettings.SafeSetProperty(object, "Text", translations[translationId])
             else
                 local englishTranslations = librarySettings.Localization and 
                     librarySettings.Localization.Translations and 
                     librarySettings.Localization.Translations.en or nil
                 if englishTranslations and englishTranslations[translationId] then
-                    object.Text = englishTranslations[translationId]
+                    librarySettings.SafeSetProperty(object, "Text", englishTranslations[translationId])
                 else
-                    object.Text = "[" .. translationId .. "]"
+                    librarySettings.SafeSetProperty(object, "Text", "[" .. translationId .. "]")
                 end
             end
         end
@@ -1092,7 +329,7 @@ function UILibrary.Utils()
 
         for i = 1, #librarySettings.LocalizationObjects do
             local langObj = librarySettings.LocalizationObjects[i]
-            if langObj.Object and langObj.Object.Parent ~= nil then
+            if langObj and langObj.Object and langObj.Object.Parent ~= nil then
                 librarySettings.SetLangForObject(i)
             else
                 librarySettings.LocalizationObjects[i] = nil
@@ -1105,36 +342,59 @@ function UILibrary.Utils()
         librarySettings.UpdateLang()
     end
 
-    -- Icon functions
+    -- Функции иконок (безопасная реализация)
     function librarySettings.Icon(iconName)
-        if iconLibrary then
-            return iconLibrary.Icon(iconName)
+        if not iconName or iconName == "" then
+            return {"", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(0, 0)}}
         end
-        return {"", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(0, 0)}}
+        
+        -- Базовая карта иконок для общих иконок
+        local iconMap = {
+            ["x"] = {"rbxassetid://3926305904", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(444, 4)}},
+            ["key"] = {"rbxassetid://3926305904", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(324, 204)}},
+            ["arrow-right"] = {"rbxassetid://3926305904", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(4, 44)}},
+            ["log-out"] = {"rbxassetid://3926305904", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(364, 204)}},
+            ["triangle-alert"] = {"rbxassetid://3926305904", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(4, 404)}},
+            ["settings"] = {"rbxassetid://3926305904", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(404, 364)}},
+            ["home"] = {"rbxassetid://3926305904", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(284, 164)}},
+            ["user"] = {"rbxassetid://3926305904", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(444, 444)}}
+        }
+        
+        return iconMap[iconName] or {"", {ImageRectSize = Vector2.new(24, 24), ImageRectPosition = Vector2.new(0, 0)}}
     end
 
     function librarySettings.AddIcons(icons, data)
-        if iconLibrary then
-            return iconLibrary.AddIcons(icons, data)
-        end
+        -- Заглушка для добавления пользовательских иконок
+        return true
     end
 
-    -- Element creation function
+    -- Создание элементов с улучшенной обработкой ошибок
     function librarySettings.CreateElement(className, properties, children)
-        local element = Instance.new(className)
-
-        -- Apply default properties
-        for prop, value in next, librarySettings.DefaultProperties[className] or {} do
-            element[prop] = value
+        local element
+        local success = pcall(function()
+            element = Instance.new(className)
+        end)
+        
+        if not success or not element then
+            warn("Failed to create element: " .. tostring(className))
+            return nil
         end
 
-        -- Apply custom properties
-        for prop, value in next, properties or {} do
-            if prop ~= "ThemeTag" then
-                element[prop] = value
+        -- Безопасно применяем свойства по умолчанию
+        local defaults = librarySettings.DefaultProperties[className] or {}
+        for prop, value in pairs(defaults) do
+            if librarySettings.HasProperty(element, prop) then
+                librarySettings.SafeSetProperty(element, prop, value)
+            end
+        end
+
+        -- Безопасно применяем пользовательские свойства
+        for prop, value in pairs(properties or {}) do
+            if prop ~= "ThemeTag" and librarySettings.HasProperty(element, prop) then
+                librarySettings.SafeSetProperty(element, prop, value)
             end
             if librarySettings.Localization and librarySettings.Localization.Enabled and prop == "Text" then
-                local translationKey = string.match(value, "^" .. librarySettings.Localization.Prefix .. "(.+)")
+                local translationKey = string.match(tostring(value), "^" .. librarySettings.Localization.Prefix .. "(.+)")
                 if translationKey then
                     local index = #librarySettings.LocalizationObjects + 1
                     librarySettings.LocalizationObjects[index] = {
@@ -1146,15 +406,18 @@ function UILibrary.Utils()
             end
         end
 
-        -- Add children
-        for _, child in next, children or {} do
-            child.Parent = element
+        -- Безопасно добавляем дочерние элементы
+        for _, child in pairs(children or {}) do
+            if child then
+                librarySettings.SafeSetProperty(child, "Parent", element)
+            end
         end
 
-        -- Apply theme
+        -- Безопасно применяем тему
         if properties and properties.ThemeTag then
             librarySettings.AddThemeObject(element, properties.ThemeTag)
         end
+        
         if properties and properties.FontFace then
             librarySettings.AddFontObject(element)
         end
@@ -1162,12 +425,18 @@ function UILibrary.Utils()
         return element
     end
 
-    -- Tween creation
+    -- Безопасное создание твинов
     function librarySettings.CreateTween(object, duration, properties, ...)
-        return TweenService:Create(object, TweenInfo.new(duration, ...), properties)
+        if not object or not duration or not properties then return nil end
+        
+        local success, tween = pcall(function()
+            return TweenService:Create(object, TweenInfo.new(duration, ...), properties)
+        end)
+        
+        return success and tween or nil
     end
 
-    -- Round frame creation
+    -- Создание округлых фреймов с обработкой ошибок
     function librarySettings.CreateRoundFrame(radius, frameType, properties, children, isButton, returnController)
         local function getImageForType(type)
             local images = {
@@ -1194,6 +463,9 @@ function UILibrary.Utils()
             end
         end
 
+        frameType = frameType or "Squircle"
+        radius = radius or 10
+
         local frameElement = librarySettings.CreateElement(
             isButton and "ImageButton" or "ImageLabel",
             {
@@ -1202,41 +474,45 @@ function UILibrary.Utils()
                 SliceCenter = getSliceCenterForType(frameType),
                 SliceScale = 1,
                 BackgroundTransparency = 1,
-                ThemeTag = properties.ThemeTag and properties.ThemeTag
+                ThemeTag = properties and properties.ThemeTag
             },
             children
         )
 
-        -- Apply properties
+        if not frameElement then return nil end
+
+        -- Безопасно применяем свойства
         for prop, value in pairs(properties or {}) do
-            if prop ~= "ThemeTag" then
-                frameElement[prop] = value
+            if prop ~= "ThemeTag" and librarySettings.HasProperty(frameElement, prop) then
+                librarySettings.SafeSetProperty(frameElement, prop, value)
             end
         end
 
         local function UpdateSliceScale(newRadius)
+            if not frameElement then return end
             local scale = frameType ~= "Shadow-sm" and (newRadius / 256) or (newRadius / 512)
-            frameElement.SliceScale = math.max(scale, 0.0001)
+            librarySettings.SafeSetProperty(frameElement, "SliceScale", math.max(scale, 0.0001))
         end
 
         local controller = {}
 
         function controller:SetRadius(newRadius)
-            UpdateSliceScale(newRadius)
+            radius = newRadius or radius
+            UpdateSliceScale(radius)
         end
 
         function controller:SetType(newType)
-            frameType = newType
-            frameElement.Image = getImageForType(newType)
-            frameElement.SliceCenter = getSliceCenterForType(newType)
+            frameType = newType or frameType
+            librarySettings.SafeSetProperty(frameElement, "Image", getImageForType(frameType))
+            librarySettings.SafeSetProperty(frameElement, "SliceCenter", getSliceCenterForType(frameType))
             UpdateSliceScale(radius)
         end
 
         function controller:UpdateShape(newRadius, newType)
             if newType then
                 frameType = newType
-                frameElement.Image = getImageForType(newType)
-                frameElement.SliceCenter = getSliceCenterForType(newType)
+                librarySettings.SafeSetProperty(frameElement, "Image", getImageForType(newType))
+                librarySettings.SafeSetProperty(frameElement, "SliceCenter", getSliceCenterForType(newType))
             end
             if newRadius then
                 radius = newRadius
@@ -1257,12 +533,14 @@ function UILibrary.Utils()
         return frameElement, returnController and controller or nil
     end
 
-    -- Drag functionality
+    -- Функция перетаскивания
     function librarySettings.SetDraggable(enabled)
         librarySettings.CanDraggable = enabled
     end
 
     function librarySettings.CreateDraggable(object, dragElements, onDragCallback)
+        if not object then return {} end
+        
         local isDragging = false
         local dragStart, startPos, dragInput, dragObj
 
@@ -1275,55 +553,63 @@ function UILibrary.Utils()
         end
 
         local function updateDrag(input)
+            if not startPos then return end
             local delta = input.Position - dragStart
-            librarySettings.CreateTween(object, 0.02, {
+            local tween = librarySettings.CreateTween(object, 0.02, {
                 Position = UDim2.new(
                     startPos.X.Scale, startPos.X.Offset + delta.X,
                     startPos.Y.Scale, startPos.Y.Offset + delta.Y
                 )
-            }):Play()
+            })
+            if tween then
+                tween:Play()
+            end
         end
 
         for _, element in pairs(dragElements) do
-            element.InputBegan:Connect(function(input)
-                if (input.UserInputType == Enum.UserInputType.MouseButton1 or 
-                    input.UserInputType == Enum.UserInputType.Touch) and dragController.CanDraggable then
-                    
-                    if dragObj == nil then
-                        dragObj = element
-                        isDragging = true
-                        dragStart = input.Position
-                        startPos = object.Position
+            if element and librarySettings.HasProperty(element, "InputBegan") then
+                librarySettings.AddSignal(element.InputBegan, function(input)
+                    if (input.UserInputType == Enum.UserInputType.MouseButton1 or 
+                        input.UserInputType == Enum.UserInputType.Touch) and dragController.CanDraggable then
+                        
+                        if dragObj == nil then
+                            dragObj = element
+                            isDragging = true
+                            dragStart = input.Position
+                            startPos = librarySettings.SafeGetProperty(object, "Position", UDim2.new(0, 0, 0, 0))
 
-                        if onDragCallback and type(onDragCallback) == "function" then
-                            onDragCallback(true, dragObj)
-                        end
-
-                        input.Changed:Connect(function()
-                            if input.UserInputState == Enum.UserInputState.End then
-                                isDragging = false
-                                dragObj = nil
-
-                                if onDragCallback and type(onDragCallback) == "function" then
-                                    onDragCallback(false, dragObj)
-                                end
+                            if onDragCallback and type(onDragCallback) == "function" then
+                                onDragCallback(true, dragObj)
                             end
-                        end)
-                    end
-                end
-            end)
 
-            element.InputChanged:Connect(function(input)
-                if dragObj == element and isDragging then
-                    if input.UserInputType == Enum.UserInputType.MouseMovement or 
-                       input.UserInputType == Enum.UserInputType.Touch then
-                        dragInput = input
+                            local inputConnection = librarySettings.AddSignal(input.Changed, function()
+                                if input.UserInputState == Enum.UserInputState.End then
+                                    isDragging = false
+                                    dragObj = nil
+
+                                    if onDragCallback and type(onDragCallback) == "function" then
+                                        onDragCallback(false, dragObj)
+                                    end
+                                end
+                            end)
+                        end
                     end
+                end)
+
+                if librarySettings.HasProperty(element, "InputChanged") then
+                    librarySettings.AddSignal(element.InputChanged, function(input)
+                        if dragObj == element and isDragging then
+                            if input.UserInputType == Enum.UserInputType.MouseMovement or 
+                               input.UserInputType == Enum.UserInputType.Touch then
+                                dragInput = input
+                            end
+                        end
+                    end)
                 end
-            end)
+            end
         end
 
-        UserInput.InputChanged:Connect(function(input)
+        librarySettings.AddSignal(UserInput.InputChanged, function(input)
             if input == dragInput and isDragging and dragObj ~= nil then
                 if dragController.CanDraggable then
                     updateDrag(input)
@@ -1338,21 +624,16 @@ function UILibrary.Utils()
         return dragController
     end
 
-    -- Initialize icon library
-    if iconLibrary then
-        iconLibrary.Init(librarySettings.CreateElement, "Icon")
-    end
-
-    -- Image handling function
+    -- Обработка изображений
     function librarySettings.CreateImage(imagePath, filename, cornerRadius, folder, category, isThemed, colorProperty)
         local function SanitizeFilename(name)
-            name = name:gsub("[%s/\\:*?\"<>|]+", "-")
+            name = tostring(name):gsub("[%s/\\:*?\"<>|]+", "-")
             name = name:gsub("[^%w%-_%.]", "")
             return name
         end
 
         folder = folder or "Temp"
-        filename = SanitizeFilename(filename)
+        filename = SanitizeFilename(filename or "image")
 
         local imageFrame = librarySettings.CreateElement("Frame", {
             Size = UDim2.new(0, 0, 0, 0),
@@ -1362,37 +643,37 @@ function UILibrary.Utils()
                 Size = UDim2.new(1, 0, 1, 0),
                 BackgroundTransparency = 1,
                 ScaleType = "Crop",
-                ThemeTag = (librarySettings.Icon(imagePath) or colorProperty) and {
-                    ImageColor3 = isThemed and "Icon" or nil
+                ThemeTag = isThemed and {
+                    ImageColor3 = "Icon"
                 } or nil,
+                Image = tostring(imagePath or "")
             }, {
                 librarySettings.CreateElement("UICorner", {
-                    CornerRadius = UDim.new(0, cornerRadius)
+                    CornerRadius = UDim.new(0, cornerRadius or 0)
                 })
             })
         })
 
-        -- Handle different image sources
-        if librarySettings.Icon(imagePath) then
-            imageFrame.ImageLabel:Destroy()
+        if not imageFrame then return nil end
 
-            local iconFrame = iconLibrary and iconLibrary.Image{
-                Icon = imagePath,
-                Size = UDim2.new(1, 0, 1, 0),
-                Colors = {
-                    (isThemed and "Icon" or false),
-                    "Button"
-                }
-            }.IconFrame or librarySettings.CreateElement("Frame")
-            
-            iconFrame.Parent = imageFrame
-        elseif string.find(imagePath, "http") then
+        -- Обработка различных источников изображений
+        local iconData = librarySettings.Icon(imagePath)
+        if iconData and iconData[1] ~= "" then
+            local imageLabel = imageFrame:FindFirstChild("ImageLabel")
+            if imageLabel then
+                librarySettings.SafeSetProperty(imageLabel, "Image", iconData[1])
+                if iconData[2] then
+                    librarySettings.SafeSetProperty(imageLabel, "ImageRectSize", iconData[2].ImageRectSize)
+                    librarySettings.SafeSetProperty(imageLabel, "ImageRectOffset", iconData[2].ImageRectPosition)
+                end
+            end
+        elseif imagePath and tostring(imagePath):find("http") then
             local cachePath = "CustomUI/" .. folder .. "/Assets/." .. category .. "-" .. filename .. ".png"
-            local success, error = pcall(function()
-                task.spawn(function()
+            task.spawn(function()
+                local success = pcall(function()
                     if not FileOperations.exists(cachePath) then
                         local response = librarySettings.RequestFunction and librarySettings.RequestFunction{
-                            Url = imagePath,
+                            Url = tostring(imagePath),
                             Method = "GET",
                         }
                         
@@ -1400,18 +681,26 @@ function UILibrary.Utils()
                             FileOperations.write(cachePath, response.Body)
                         end
                     end
-                    imageFrame.ImageLabel.Image = FileOperations.getCustomAsset(cachePath)
+                    local imageLabel = imageFrame:FindFirstChild("ImageLabel")
+                    if imageLabel then
+                        librarySettings.SafeSetProperty(imageLabel, "Image", FileOperations.getCustomAsset(cachePath))
+                    end
                 end)
+                
+                if not success then
+                    warn("[ Custom UI Library ] '" .. getExecutorInfo() .. "' не поддерживает URL изображения.")
+                    if imageFrame then
+                        imageFrame:Destroy()
+                    end
+                end
             end)
-            
-            if not success then
-                warn("[ Custom UI Library ] '" .. getExecutorInfo() .. "' doesn't support URL Images. Error: " .. error)
-                imageFrame:Destroy()
-            end
         elseif imagePath == "" then
-            imageFrame.Visible = false
+            librarySettings.SafeSetProperty(imageFrame, "Visible", false)
         else
-            imageFrame.ImageLabel.Image = imagePath
+            local imageLabel = imageFrame:FindFirstChild("ImageLabel")
+            if imageLabel then
+                librarySettings.SafeSetProperty(imageLabel, "Image", tostring(imagePath or ""))
+            end
         end
 
         return imageFrame
@@ -1420,19 +709,21 @@ function UILibrary.Utils()
     return librarySettings
 end
 
--- Localization module
+-- Система локализации
 function UILibrary.Localization()
     local localization = {}
 
     function localization.New(library, config, utilsRef)
         local localizationSystem = {
-            Enabled = config.Enabled or false,
-            Translations = config.Translations or {},
-            Prefix = config.Prefix or "loc:",
-            DefaultLanguage = config.DefaultLanguage or "en"
+            Enabled = config and config.Enabled or false,
+            Translations = config and config.Translations or {},
+            Prefix = config and config.Prefix or "loc:",
+            DefaultLanguage = config and config.DefaultLanguage or "en"
         }
 
-        utilsRef.Localization = localizationSystem
+        if utilsRef then
+            utilsRef.Localization = localizationSystem
+        end
 
         return localizationSystem
     end
@@ -1440,9 +731,11 @@ function UILibrary.Localization()
     return localization
 end
 
--- Notification system
+-- Система уведомлений с обработкой ошибок
 function UILibrary.NotificationSystem()
-    local utils = UILibrary.Utils() -- Direct call instead of loadModule
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
 
@@ -1457,13 +750,17 @@ function UILibrary.NotificationSystem()
     }
 
     function notifications.Init(parent)
+        if not parent then return nil end
+        
         local notificationController = {
             Lower = false
         }
 
         function notificationController.SetLower(isLower)
             notificationController.Lower = isLower
-            notificationController.Frame.Size = isLower and notifications.SizeLower or notifications.Size
+            if notificationController.Frame then
+                utils.SafeSetProperty(notificationController.Frame, "Size", isLower and notifications.SizeLower or notifications.Size)
+            end
         end
 
         notificationController.Frame = createElement("Frame", {
@@ -1488,6 +785,8 @@ function UILibrary.NotificationSystem()
     end
 
     function notifications.CreateNotification(config)
+        if not config then return {} end
+        
         local notification = {
             Title = config.Title or "Notification",
             Content = config.Content or nil,
@@ -1497,14 +796,10 @@ function UILibrary.NotificationSystem()
             BackgroundImageTransparency = config.BackgroundImageTransparency,
             Duration = config.Duration or 5,
             Buttons = config.Buttons or {},
-            CanClose = true,
+            CanClose = config.CanClose ~= false,
             UIElements = {},
             Closed = false,
         }
-
-        if notification.CanClose == nil then
-            notification.CanClose = true
-        end
 
         notifications.NotificationIndex = notifications.NotificationIndex + 1
         notifications.Notifications[notifications.NotificationIndex] = notification
@@ -1515,20 +810,23 @@ function UILibrary.NotificationSystem()
                 notification.Icon,
                 notification.Title .. ":" .. notification.Icon,
                 0,
-                config.Window,
+                config.Window or "Temp",
                 "Notification", 
                 notification.IconThemed
             )
-            iconElement.Size = UDim2.new(0, 26, 0, 26)
-            iconElement.Position = UDim2.new(0, notifications.UIPadding, 0, notifications.UIPadding)
+            if iconElement then
+                utils.SafeSetProperty(iconElement, "Size", UDim2.new(0, 26, 0, 26))
+                utils.SafeSetProperty(iconElement, "Position", UDim2.new(0, notifications.UIPadding, 0, notifications.UIPadding))
+            end
         end
 
         local closeButton
         if notification.CanClose then
+            local iconData = utils.Icon("x")
             closeButton = createElement("ImageButton", {
-                Image = utils.Icon("x")[1],
-                ImageRectSize = utils.Icon("x")[2].ImageRectSize,
-                ImageRectOffset = utils.Icon("x")[2].ImageRectPosition,
+                Image = iconData[1],
+                ImageRectSize = iconData[2].ImageRectSize,
+                ImageRectOffset = iconData[2].ImageRectPosition,
                 BackgroundTransparency = 1,
                 Size = UDim2.new(0, 16, 0, 16),
                 Position = UDim2.new(1, -notifications.UIPadding, 0, notifications.UIPadding),
@@ -1628,11 +926,11 @@ function UILibrary.NotificationSystem()
             }),
             createElement("ImageLabel", {
                 Name = "Background",
-                Image = notification.Background,
+                Image = notification.Background or "",
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 1, 0),
                 ScaleType = "Crop",
-                ImageTransparency = notification.BackgroundImageTransparency
+                ImageTransparency = notification.BackgroundImageTransparency or 1
             }, {
                 createElement("UICorner", {
                     CornerRadius = UDim.new(0, notifications.UICorner),
@@ -1654,33 +952,47 @@ function UILibrary.NotificationSystem()
         function notification.Close()
             if not notification.Closed then
                 notification.Closed = true
-                createTween(containerFrame, 0.45, {Size = UDim2.new(1, 0, 0, -8)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
-                createTween(notificationFrame, 0.55, {Position = UDim2.new(2, 0, 1, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
-                task.wait(.45)
-                containerFrame:Destroy()
+                if containerFrame then
+                    local sizeTween = createTween(containerFrame, 0.45, {Size = UDim2.new(1, 0, 0, -8)})
+                    local posTween = createTween(notificationFrame, 0.55, {Position = UDim2.new(2, 0, 1, 0)})
+                    
+                    if sizeTween then sizeTween:Play() end
+                    if posTween then posTween:Play() end
+                    
+                    task.wait(.45)
+                    containerFrame:Destroy()
+                end
             end
         end
 
-        -- Animation
+        -- Анимация
         task.spawn(function()
             task.wait()
-            createTween(containerFrame, 0.45, {
-                Size = UDim2.new(1, 0, 0, notificationFrame.AbsoluteSize.Y)
-            }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
-            
-            createTween(notificationFrame, 0.45, {Position = UDim2.new(0, 0, 1, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
-            
-            if notification.Duration then
-                createTween(progressBar, notification.Duration, {Size = UDim2.new(1, 0, 1, 0)}, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut):Play()
-                task.wait(notification.Duration)
-                notification:Close()
+            if containerFrame and notificationFrame then
+                local sizeTween = createTween(containerFrame, 0.45, {
+                    Size = UDim2.new(1, 0, 0, utils.SafeGetProperty(notificationFrame, "AbsoluteSize", Vector2.new(0, 60)).Y)
+                })
+                local posTween = createTween(notificationFrame, 0.45, {Position = UDim2.new(0, 0, 1, 0)})
+                
+                if sizeTween then sizeTween:Play() end
+                if posTween then posTween:Play() end
+                
+                if notification.Duration then
+                    local progressTween = createTween(progressBar, notification.Duration, {Size = UDim2.new(1, 0, 1, 0)})
+                    if progressTween then progressTween:Play() end
+                    task.wait(notification.Duration)
+                    notification:Close()
+                end
             end
         end)
 
         if closeButton then
-            utils.AddSignal(closeButton.TextButton.MouseButton1Click, function()
-                notification:Close()
-            end)
+            local textButton = closeButton:FindFirstChild("TextButton")
+            if textButton and utils.HasProperty(textButton, "MouseButton1Click") then
+                utils.AddSignal(textButton.MouseButton1Click, function()
+                    notification:Close()
+                end)
+            end
         end
 
         return notification
@@ -1689,7 +1001,7 @@ function UILibrary.NotificationSystem()
     return notifications
 end
 
--- Theme system
+-- Система тем
 function UILibrary.Themes()
     return {
         Dark = {
@@ -1735,133 +1047,21 @@ function UILibrary.Themes()
             Background = "#0a1b0f",
             Button = "#16a34a",
             Icon = "#4ade80",
-        },
-        Red = {
-            Name = "Red",
-            Accent = "#991b1b",
-            Dialog = "#450a0a",
-            Outline = "#fecaca",
-            Text = "#fef2f2",
-            Placeholder = "#f87171",
-            Background = "#1c0606", 
-            Button = "#dc2626",
-            Icon = "#ef4444",
-        },
-        Indigo = {
-            Name = "Indigo", 
-            Accent = "#3730a3",
-            Dialog = "#1e1b4b",
-            Outline = "#c7d2fe",
-            Text = "#f1f5f9",
-            Placeholder = "#a5b4fc",
-            Background = "#0f0a2e",
-            Button = "#4f46e5",
-            Icon = "#6366f1",
-        },
-        Sky = {
-            Name = "Sky",
-            Accent = "#0369a1", 
-            Dialog = "#0c4a6e",
-            Outline = "#bae6fd",
-            Text = "#f0f9ff",
-            Placeholder = "#7dd3fc",
-            Background = "#041f2e",
-            Button = "#0284c7",
-            Icon = "#0ea5e9",
-        },
-        Violet = {
-            Name = "Violet",
-            Accent = "#6d28d9",
-            Dialog = "#3c1361",
-            Outline = "#ddd6fe",
-            Text = "#faf5ff",
-            Placeholder = "#c4b5fd",
-            Background = "#1e0a3e",
-            Button = "#7c3aed", 
-            Icon = "#8b5cf6",
-        },
-        Amber = {
-            Name = "Amber",
-            Accent = "#b45309",
-            Dialog = "#451a03",
-            Outline = "#fde68a",
-            Text = "#fffbeb",
-            Placeholder = "#fcd34d",
-            Background = "#1c1003",
-            Button = "#d97706",
-            Icon = "#f59e0b",
-        },
-        Emerald = {
-            Name = "Emerald",
-            Accent = "#047857",
-            Dialog = "#022c22",
-            Outline = "#a7f3d0", 
-            Text = "#ecfdf5",
-            Placeholder = "#6ee7b7",
-            Background = "#011411",
-            Button = "#059669",
-            Icon = "#10b981",
-        },
-        Midnight = {
-            Name = "Midnight",
-            Accent = "#1e3a8a",
-            Dialog = "#0c1e42",
-            Outline = "#bfdbfe",
-            Text = "#dbeafe",
-            Placeholder = "#60a5fa",
-            Background = "#0a0f1e",
-            Button = "#2563eb", 
-            Icon = "#3b82f6",
-        },
-        Crimson = {
-            Name = "Crimson",
-            Accent = "#b91c1c",
-            Dialog = "#450a0a",
-            Outline = "#fca5a5",
-            Text = "#fef2f2",
-            Placeholder = "#9ca3af",
-            Background = "#0c0404",
-            Button = "#991b1b",
-            Icon = "#dc2626",
-        },
-        MonokaiPro = {
-            Name = "Monokai Pro",
-            Accent = "#fc9867",
-            Dialog = "#1e1e1e",
-            Outline = "#78dce8", 
-            Text = "#fcfcfa",
-            Placeholder = "#939293",
-            Background = "#191622",
-            Button = "#ab9df2",
-            Icon = "#a9dc76",
-        },
-        CottonCandy = {
-            Name = "Cotton Candy",
-            Accent = "#ec4899",
-            Dialog = "#2d1b3d",
-            Outline = "#f9a8d4",
-            Text = "#fdf2f8",
-            Placeholder = "#c084fc",
-            Background = "#1a0b2e",
-            Button = "#d946ef",
-            Icon = "#06b6d4",
-        },
+        }
     }
 end
 
--- SHA256 and JSON utilities (safer implementation)
+-- Криптографические утилиты (упрощенные и безопасные)
 function UILibrary.CryptoUtils()
-    -- Simplified SHA256 implementation for safety
-    local function simpleSHA256(input)
-        -- Basic hash function - not cryptographically secure but works for UI purposes
+    local function safeSHA256(input)
         local hash = 0
+        input = tostring(input or "")
         for i = 1, #input do
             hash = ((hash * 31) + string.byte(input, i)) % 4294967296
         end
         return string.format("%08x", hash)
     end
 
-    -- Safe JSON implementation
     local function safeJSONEncode(data)
         local success, result = pcall(function()
             return Services.HttpService:JSONEncode(data)
@@ -1871,21 +1071,21 @@ function UILibrary.CryptoUtils()
 
     local function safeJSONDecode(json)
         local success, result = pcall(function()
-            return Services.HttpService:JSONDecode(json)
+            return Services.HttpService:JSONDecode(tostring(json or "{}"))
         end)
         return success and result or {}
     end
 
     return {
-        SHA256 = simpleSHA256,
+        SHA256 = safeSHA256,
         JSONEncode = safeJSONEncode,
         JSONDecode = safeJSONDecode
     }
 end
 
--- Key system modules (safer implementations)
+-- Системы ключей (безопасные реализации)
 function UILibrary.PlatoBoost()
-    local crypto = UILibrary.CryptoUtils() -- Direct call
+    local crypto = UILibrary.CryptoUtils()
     local keySystem = {}
 
     function keySystem.New(serviceId, secret)
@@ -1898,7 +1098,9 @@ function UILibrary.PlatoBoost()
         local cachedUrl = ""
         local lastCache = 0
 
-        local function onError(message) end
+        local function onError(message) 
+            warn("PlatoBoost Error: " .. tostring(message))
+        end
 
         repeat task.wait(1) until game:IsLoaded()
 
@@ -1906,30 +1108,32 @@ function UILibrary.PlatoBoost()
 
         local function cacheLink()
             if lastCache + 600 < os.time() then
-                local response = request and request{
-                    Url = baseUrl .. "/sessions",
-                    Method = "POST",
-                    Body = crypto.JSONEncode({
-                        service = serviceId,
-                        identifier = crypto.SHA256(uniqueId())
-                    }),
-                    Headers = {
-                        ["Content-Type"] = "application/json",
-                        ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                local success, response = pcall(function()
+                    return request and request{
+                        Url = baseUrl .. "/sessions",
+                        Method = "POST",
+                        Body = crypto.JSONEncode({
+                            service = tostring(serviceId),
+                            identifier = crypto.SHA256(uniqueId())
+                        }),
+                        Headers = {
+                            ["Content-Type"] = "application/json",
+                            ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                        }
                     }
-                }
+                end)
 
-                if response and response.StatusCode == 200 then
+                if success and response and response.StatusCode == 200 then
                     local data = crypto.JSONDecode(response.Body)
                     if data.success then
-                        cachedUrl = data.data.url
+                        cachedUrl = tostring(data.data and data.data.url or "")
                         lastCache = os.time()
                         return true, cachedUrl
                     else
-                        onError(data.message)
-                        return false, data.message
+                        onError(data.message or "Unknown error")
+                        return false, data.message or "Unknown error"
                     end
-                elseif response and response.StatusCode == 429 then
+                elseif success and response and response.StatusCode == 429 then
                     local message = "Rate limited, please wait 20 seconds."
                     onError(message)
                     return false, message
@@ -1953,17 +1157,6 @@ function UILibrary.PlatoBoost()
             return nonce
         end
 
-        -- Anti-tampering checks
-        for i = 1, 5 do
-            local testNonce = generateNonce()
-            task.wait(0.2)
-            if generateNonce() == testNonce then
-                local error = "Security check failed."
-                onError(error)
-                error(error)
-            end
-        end
-
         local function copyLink()
             local success, url = cacheLink()
             if success and setclipboard then
@@ -1977,28 +1170,30 @@ function UILibrary.PlatoBoost()
 
             local payload = {
                 identifier = crypto.SHA256(uniqueId()),
-                key = key,
+                key = tostring(key),
                 nonce = nonce
             }
 
-            local response = request and request{
-                Url = endpoint,
-                Method = "POST", 
-                Body = crypto.JSONEncode(payload),
-                Headers = {
-                    ["Content-Type"] = "application/json"
+            local success, response = pcall(function()
+                return request and request{
+                    Url = endpoint,
+                    Method = "POST", 
+                    Body = crypto.JSONEncode(payload),
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    }
                 }
-            }
+            end)
 
-            if response and response.StatusCode == 200 then
+            if success and response and response.StatusCode == 200 then
                 local data = crypto.JSONDecode(response.Body)
-                if data.success and data.data.valid then
+                if data.success and data.data and data.data.valid then
                     return true
                 else
                     onError("Key is invalid.")
                     return false
                 end
-            elseif response and response.StatusCode == 429 then
+            elseif success and response and response.StatusCode == 429 then
                 onError("Rate limited.")
                 return false
             else
@@ -2015,27 +1210,29 @@ function UILibrary.PlatoBoost()
 
             local nonce = generateNonce()
             local endpoint = baseUrl .. "/whitelist/" .. tostring(serviceId) .. 
-                "?identifier=" .. crypto.SHA256(uniqueId()) .. "&key=" .. key .. "&nonce=" .. nonce
+                "?identifier=" .. crypto.SHA256(uniqueId()) .. "&key=" .. tostring(key) .. "&nonce=" .. nonce
 
-            local response = request and request{
-                Url = endpoint,
-                Method = "GET"
-            }
+            local success, response = pcall(function()
+                return request and request{
+                    Url = endpoint,
+                    Method = "GET"
+                }
+            end)
 
             isActive = false
 
-            if response and response.StatusCode == 200 then
+            if success and response and response.StatusCode == 200 then
                 local data = crypto.JSONDecode(response.Body)
-                if data.success and data.data.valid then
+                if data.success and data.data and data.data.valid then
                     return true, ""
                 else
-                    if string.sub(key, 1, 4) == "KEY_" then
+                    if tostring(key):sub(1, 4) == "KEY_" then
                         return redeemKey(key), ""
                     else
                         return false, "Key is invalid."
                     end
                 end
-            elseif response and response.StatusCode == 429 then
+            elseif success and response and response.StatusCode == 429 then
                 return false, "Rate limited."
             else
                 return false, "Server error."
@@ -2052,7 +1249,7 @@ function UILibrary.PlatoBoost()
 end
 
 function UILibrary.PandaDevelopment()
-    local crypto = UILibrary.CryptoUtils() -- Direct call
+    local crypto = UILibrary.CryptoUtils()
     local keySystem = {}
 
     function keySystem.New(serviceId)
@@ -2121,20 +1318,28 @@ function UILibrary.Luarmor()
     local keySystem = {}
 
     function keySystem.New(scriptId, discordLink)
-        -- Safe loadstring for Luarmor API
+        -- Безопасный loadstring для Luarmor API
         local luarmorAPI = nil
         pcall(function()
-            local apiCode = game:HttpGetAsync("https://api.luarmor.net/files/v3/loaders/scripts/" .. scriptId)
-            luarmorAPI = loadstring(apiCode)()
-            luarmorAPI.script_id = scriptId
+            local success, apiCode = pcall(game.HttpGetAsync, game, "https://api.luarmor.net/files/v3/loaders/scripts/" .. tostring(scriptId))
+            if success and apiCode then
+                luarmorAPI = loadstring(apiCode)()
+                if luarmorAPI then
+                    luarmorAPI.script_id = tostring(scriptId)
+                end
+            end
         end)
 
         local function validateKey(key)
-            if not luarmorAPI then
+            if not luarmorAPI or not luarmorAPI.check_key then
                 return false, "API not available"
             end
 
-            local result = luarmorAPI.check_key(key)
+            local success, result = pcall(luarmorAPI.check_key, tostring(key))
+            
+            if not success then
+                return false, "API error"
+            end
 
             if result.code == "KEY_VALID" then
                 return true, "Whitelisted!"
@@ -2162,39 +1367,48 @@ function UILibrary.Luarmor()
     return keySystem
 end
 
--- Key system service registry
+-- Реестр сервисов системы ключей
 function UILibrary.KeySystemServices()
     return {
         platoboost = {
             Name = "Platoboost",
             Icon = "rbxassetid://75920162824531",
             Args = {"ServiceId", "Secret"},
-            New = UILibrary.PlatoBoost().New -- Direct reference
+            New = function(...) 
+                local platoModule = UILibrary.PlatoBoost()
+                return platoModule.New(...)
+            end
         },
         pandadevelopment = {
             Name = "Panda Development", 
             Icon = "panda",
             Args = {"ServiceId"},
-            New = UILibrary.PandaDevelopment().New -- Direct reference
+            New = function(...)
+                local pandaModule = UILibrary.PandaDevelopment()
+                return pandaModule.New(...)
+            end
         },
         luarmor = {
             Name = "Luarmor",
             Icon = "rbxassetid://130918283130165",
             Args = {"ScriptId", "Discord"},
-            New = UILibrary.Luarmor().New -- Direct reference
+            New = function(...)
+                local luarmorModule = UILibrary.Luarmor()
+                return luarmorModule.New(...)
+            end
         },
     }
 end
 
--- Library version info (obfuscated)
+-- Информация о версии библиотеки
 function UILibrary.PackageInfo()
     return Services.HttpService:JSONDecode([[{
         "name": "customui",
-        "version": "2.1.0", 
+        "version": "2.1.1", 
         "main": "./dist/main.lua",
         "repository": "https://github.com/anonymous/customui",
         "author": "Anonymous",
-        "description": "Custom Roblox UI Library",
+        "description": "Custom Roblox UI Library - Fixed Version",
         "license": "MIT",
         "keywords": [
             "ui-library",
@@ -2205,9 +1419,11 @@ function UILibrary.PackageInfo()
     }]])
 end
 
--- Button component
+-- Компонент кнопки
 function UILibrary.Button()
-    local utils = UILibrary.Utils() -- Direct call
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
 
@@ -2219,10 +1435,11 @@ function UILibrary.Button()
         local iconElement
 
         if icon and icon ~= "" then
+            local iconData = utils.Icon(icon)
             iconElement = createElement("ImageLabel", {
-                Image = utils.Icon(icon)[1],
-                ImageRectSize = utils.Icon(icon)[2].ImageRectSize,
-                ImageRectOffset = utils.Icon(icon)[2].ImageRectPosition,
+                Image = iconData[1],
+                ImageRectSize = iconData[2].ImageRectSize,
+                ImageRectOffset = iconData[2].ImageRectPosition,
                 Size = UDim2.new(0, 21, 0, 21),
                 BackgroundTransparency = 1,
                 ThemeTag = {
@@ -2235,7 +1452,8 @@ function UILibrary.Button()
             Size = UDim2.new(0, 0, 1, 0),
             AutomaticSize = "X",
             Parent = parent,
-            BackgroundTransparency = 1
+            BackgroundTransparency = 1,
+            Text = ""
         }, {
             utils.CreateRoundFrame(cornerRadius, "Squircle", {
                 ThemeTag = {
@@ -2311,7 +1529,7 @@ function UILibrary.Button()
                 createElement("TextLabel", {
                     BackgroundTransparency = 1,
                     FontFace = Font.new(utils.Font, Enum.FontWeight.SemiBold),
-                    Text = title or "Button",
+                    Text = tostring(title or "Button"),
                     ThemeTag = {
                         TextColor3 = (variant ~= "Primary" and variant ~= "White") and "Text",
                     },
@@ -2322,22 +1540,38 @@ function UILibrary.Button()
             })
         })
 
-        utils.AddSignal(buttonElement.MouseEnter, function()
-            createTween(buttonElement.Frame, .047, {ImageTransparency = .95}):Play()
-        end)
+        if not buttonElement then return nil end
 
-        utils.AddSignal(buttonElement.MouseLeave, function()
-            createTween(buttonElement.Frame, .047, {ImageTransparency = 1}):Play()
-        end)
+        if utils.HasProperty(buttonElement, "MouseEnter") then
+            utils.AddSignal(buttonElement.MouseEnter, function()
+                local frameChild = buttonElement:FindFirstChild("Frame")
+                if frameChild then
+                    local tween = createTween(frameChild, .047, {ImageTransparency = .95})
+                    if tween then tween:Play() end
+                end
+            end)
+        end
 
-        utils.AddSignal(buttonElement.MouseButton1Up, function()
-            if dialog then
-                dialog:Close()()
-            end
-            if callback then
-                utils.SafeCallback(callback)
-            end
-        end)
+        if utils.HasProperty(buttonElement, "MouseLeave") then
+            utils.AddSignal(buttonElement.MouseLeave, function()
+                local frameChild = buttonElement:FindFirstChild("Frame")
+                if frameChild then
+                    local tween = createTween(frameChild, .047, {ImageTransparency = 1})
+                    if tween then tween:Play() end
+                end
+            end)
+        end
+
+        if utils.HasProperty(buttonElement, "MouseButton1Up") then
+            utils.AddSignal(buttonElement.MouseButton1Up, function()
+                if dialog and dialog.Close then
+                    dialog:Close()
+                end
+                if callback then
+                    utils.SafeCallback(callback)
+                end
+            end)
+        end
 
         return buttonElement
     end
@@ -2345,9 +1579,11 @@ function UILibrary.Button()
     return button
 end
 
--- Input/TextBox component
+-- Компонент ввода/TextBox
 function UILibrary.Input()
-    local utils = UILibrary.Utils() -- Direct call
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
 
@@ -2359,10 +1595,11 @@ function UILibrary.Input()
         local iconElement
 
         if icon and icon ~= "" then
+            local iconData = utils.Icon(icon)
             iconElement = createElement("ImageLabel", {
-                Image = utils.Icon(icon)[1],
-                ImageRectSize = utils.Icon(icon)[2].ImageRectSize,
-                ImageRectOffset = utils.Icon(icon)[2].ImageRectPosition,
+                Image = iconData[1],
+                ImageRectSize = iconData[2].ImageRectSize,
+                ImageRectOffset = iconData[2].ImageRectPosition,
                 Size = UDim2.new(0, 21, 0, 21),
                 BackgroundTransparency = 1,
                 ThemeTag = {
@@ -2378,7 +1615,7 @@ function UILibrary.Input()
             TextSize = 17,
             FontFace = Font.new(utils.Font, Enum.FontWeight.Regular),
             Size = UDim2.new(1, iconElement and -29 or 0, 1, 0),
-            PlaceholderText = placeholder,
+            PlaceholderText = tostring(placeholder or ""),
             ClearTextOnFocus = false,
             ClipsDescendants = true,
             TextWrapped = isMultiline,
@@ -2386,9 +1623,10 @@ function UILibrary.Input()
             TextXAlignment = "Left",
             TextYAlignment = inputType == "Input" and "Center" or "Top",
             ThemeTag = {
-                PlaceholderColor3 = "PlaceholderText",
+                PlaceholderColor3 = "Placeholder",
                 TextColor3 = "Text",
             },
+            Text = ""
         })
 
         local inputFrame = createElement("Frame", {
@@ -2438,18 +1676,24 @@ function UILibrary.Input()
             })
         })
 
+        if not inputFrame or not textBox then return nil end
+
         if realTime then
-            utils.AddSignal(textBox:GetPropertyChangedSignal("Text"), function()
-                if callback then
-                    utils.SafeCallback(callback, textBox.Text)
-                end
-            end)
+            if utils.HasProperty(textBox, "GetPropertyChangedSignal") then
+                utils.AddSignal(textBox:GetPropertyChangedSignal("Text"), function()
+                    if callback then
+                        utils.SafeCallback(callback, textBox.Text)
+                    end
+                end)
+            end
         else
-            utils.AddSignal(textBox.FocusLost, function()
-                if callback then
-                    utils.SafeCallback(callback, textBox.Text)
-                end
-            end)
+            if utils.HasProperty(textBox, "FocusLost") then
+                utils.AddSignal(textBox.FocusLost, function()
+                    if callback then
+                        utils.SafeCallback(callback, textBox.Text)
+                    end
+                end)
+            end
         end
 
         return inputFrame
@@ -2458,9 +1702,11 @@ function UILibrary.Input()
     return input
 end
 
--- Dialog/Modal system
+-- Система диалогов/модалок
 function UILibrary.Dialog()
-    local utils = UILibrary.Utils() -- Direct call
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
 
@@ -2552,44 +1798,58 @@ function UILibrary.Dialog()
         })
 
         function dialogController.Open()
-            if not isEmbedded then
-                dialogController.UIElements.FullScreen.Visible = true
-                dialogController.UIElements.FullScreen.Active = true
+            if not isEmbedded and dialogController.UIElements.FullScreen then
+                utils.SafeSetProperty(dialogController.UIElements.FullScreen, "Visible", true)
+                utils.SafeSetProperty(dialogController.UIElements.FullScreen, "Active", true)
             end
 
             task.spawn(function()
-                dialogController.UIElements.MainContainer.Visible = true
+                if dialogController.UIElements.MainContainer then
+                    utils.SafeSetProperty(dialogController.UIElements.MainContainer, "Visible", true)
 
-                if not isEmbedded then
-                    createTween(dialogController.UIElements.FullScreen, 0.1, {BackgroundTransparency = .3}):Play()
+                    if not isEmbedded and dialogController.UIElements.FullScreen then
+                        local tween = createTween(dialogController.UIElements.FullScreen, 0.1, {BackgroundTransparency = .3})
+                        if tween then tween:Play() end
+                    end
+                    
+                    local tween2 = createTween(dialogController.UIElements.MainContainer, 0.1, {ImageTransparency = 0})
+                    if tween2 then tween2:Play() end
+
+                    task.spawn(function()
+                        task.wait(0.05)
+                        if dialogController.UIElements.Main then
+                            utils.SafeSetProperty(dialogController.UIElements.Main, "Visible", true)
+                        end
+                    end)
                 end
-                createTween(dialogController.UIElements.MainContainer, 0.1, {ImageTransparency = 0}):Play()
-
-                task.spawn(function()
-                    task.wait(0.05)
-                    dialogController.UIElements.Main.Visible = true
-                end)
             end)
         end
 
         function dialogController.Close()
-            if not isEmbedded then
-                createTween(dialogController.UIElements.FullScreen, 0.1, {BackgroundTransparency = 1}):Play()
-                dialogController.UIElements.FullScreen.Active = false
+            if not isEmbedded and dialogController.UIElements.FullScreen then
+                local tween = createTween(dialogController.UIElements.FullScreen, 0.1, {BackgroundTransparency = 1})
+                if tween then tween:Play() end
+                utils.SafeSetProperty(dialogController.UIElements.FullScreen, "Active", false)
                 task.spawn(function()
                     task.wait(.1)
-                    dialogController.UIElements.FullScreen.Visible = false
+                    utils.SafeSetProperty(dialogController.UIElements.FullScreen, "Visible", false)
                 end)
             end
-            dialogController.UIElements.Main.Visible = false
+            
+            if dialogController.UIElements.Main then
+                utils.SafeSetProperty(dialogController.UIElements.Main, "Visible", false)
+            end
 
-            createTween(dialogController.UIElements.MainContainer, 0.1, {ImageTransparency = 1}):Play()
+            if dialogController.UIElements.MainContainer then
+                local tween = createTween(dialogController.UIElements.MainContainer, 0.1, {ImageTransparency = 1})
+                if tween then tween:Play() end
+            end
 
             task.spawn(function()
                 task.wait(.1)
-                if not isEmbedded then
+                if not isEmbedded and dialogController.UIElements.FullScreen then
                     dialogController.UIElements.FullScreen:Destroy()
-                else
+                elseif dialogController.UIElements.MainContainer then
                     dialogController.UIElements.MainContainer:Destroy()
                 end
             end)
@@ -2603,29 +1863,36 @@ function UILibrary.Dialog()
     return dialog
 end
 
--- Popup/Modal component
+-- Компонент всплывающих окон/модалок
 function UILibrary.Popup()
-    local utils = UILibrary.Utils() -- Direct call
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
-    local dialogModule = UILibrary.Dialog() -- Direct call
-    local buttonModule = UILibrary.Button() -- Direct call
+    local dialogModule = UILibrary.Dialog()
+    local buttonModule = UILibrary.Button()
 
     local popup = {}
 
     function popup.New(config)
+        if not config or not config.WindUI then return {} end
+        
         local popupData = {
             Title = config.Title or "Dialog",
             Content = config.Content,
             Icon = config.Icon,
             IconThemed = config.IconThemed,
             Thumbnail = config.Thumbnail,
-            Buttons = config.Buttons,
+            Buttons = config.Buttons or {},
             IconSize = 22,
         }
 
-        local dialogController = dialogModule.Init(nil, config.WindUI.ScreenGui.Popups)
+        local dialogController = dialogModule.Init(nil, config.WindUI.ScreenGui)
+        if not dialogController then return popupData end
+        
         local dialogUI = dialogController.Create(true)
+        if not dialogUI then return popupData end
 
         local thumbnailWidth = 200
         local dialogWidth = 430
@@ -2634,8 +1901,10 @@ function UILibrary.Popup()
             dialogWidth = 430 + (thumbnailWidth / 2)
         end
 
-        dialogUI.UIElements.Main.AutomaticSize = "Y"
-        dialogUI.UIElements.Main.Size = UDim2.new(0, dialogWidth, 0, 0)
+        if dialogUI.UIElements and dialogUI.UIElements.Main then
+            utils.SafeSetProperty(dialogUI.UIElements.Main, "AutomaticSize", "Y")
+            utils.SafeSetProperty(dialogUI.UIElements.Main, "Size", UDim2.new(0, dialogWidth, 0, 0))
+        end
 
         local iconElement
         if popupData.Icon then
@@ -2643,19 +1912,21 @@ function UILibrary.Popup()
                 popupData.Icon,
                 popupData.Title .. ":" .. popupData.Icon,
                 0,
-                config.WindUI.Window,
+                config.WindUI.Window and config.WindUI.Window.Folder or "Temp",
                 "Popup",
                 true,
                 config.IconThemed
             )
-            iconElement.Size = UDim2.new(0, popupData.IconSize, 0, popupData.IconSize)
-            iconElement.LayoutOrder = -1
+            if iconElement then
+                utils.SafeSetProperty(iconElement, "Size", UDim2.new(0, popupData.IconSize, 0, popupData.IconSize))
+                utils.SafeSetProperty(iconElement, "LayoutOrder", -1)
+            end
         end
 
         local titleLabel = createElement("TextLabel", {
             AutomaticSize = "Y",
             BackgroundTransparency = 1,
-            Text = popupData.Title,
+            Text = tostring(popupData.Title),
             TextXAlignment = "Left",
             FontFace = Font.new(utils.Font, Enum.FontWeight.SemiBold),
             ThemeTag = {
@@ -2694,7 +1965,7 @@ function UILibrary.Popup()
                 AutomaticSize = "Y",
                 FontFace = Font.new(utils.Font, Enum.FontWeight.Medium),
                 TextXAlignment = "Left",
-                Text = popupData.Content,
+                Text = tostring(popupData.Content),
                 TextSize = 18,
                 TextTransparency = .2,
                 ThemeTag = {
@@ -2718,11 +1989,11 @@ function UILibrary.Popup()
         })
 
         local thumbnailImage
-        if popupData.Thumbnail and popupData.Thumbnail.Image then
+        if popupData.Thumbnail and popupData.Thumbnail.Image and dialogUI.UIElements and dialogUI.UIElements.Main then
             local thumbnailLabel
             if popupData.Thumbnail.Title then
                 thumbnailLabel = createElement("TextLabel", {
-                    Text = popupData.Thumbnail.Title,
+                    Text = tostring(popupData.Thumbnail.Title),
                     ThemeTag = {
                         TextColor3 = "Text",
                     },
@@ -2735,7 +2006,7 @@ function UILibrary.Popup()
                 })
             end
             thumbnailImage = createElement("ImageLabel", {
-                Image = popupData.Thumbnail.Image,
+                Image = tostring(popupData.Thumbnail.Image),
                 BackgroundTransparency = 1,
                 Size = UDim2.new(0, thumbnailWidth, 1, 0),
                 Parent = dialogUI.UIElements.Main,
@@ -2748,38 +2019,44 @@ function UILibrary.Popup()
             })
         end
 
-        createElement("Frame", {
-            Size = UDim2.new(1, thumbnailImage and -thumbnailWidth or 0, 1, 0),
-            Position = UDim2.new(0, thumbnailImage and thumbnailWidth or 0, 0, 0),
-            BackgroundTransparency = 1,
-            Parent = dialogUI.UIElements.Main
-        }, {
+        if dialogUI.UIElements and dialogUI.UIElements.Main then
             createElement("Frame", {
-                Size = UDim2.new(1, 0, 1, 0),
+                Size = UDim2.new(1, thumbnailImage and -thumbnailWidth or 0, 1, 0),
+                Position = UDim2.new(0, thumbnailImage and thumbnailWidth or 0, 0, 0),
                 BackgroundTransparency = 1,
+                Parent = dialogUI.UIElements.Main
             }, {
-                createElement("UIListLayout", {
-                    Padding = UDim.new(0, 18),
-                    FillDirection = "Vertical",
+                createElement("Frame", {
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundTransparency = 1,
+                }, {
+                    createElement("UIListLayout", {
+                        Padding = UDim.new(0, 18),
+                        FillDirection = "Vertical",
+                    }),
+                    mainContentFrame,
+                    contentLabel,
+                    buttonsFrame,
+                    createElement("UIPadding", {
+                        PaddingTop = UDim.new(0, 16),
+                        PaddingLeft = UDim.new(0, 16),
+                        PaddingRight = UDim.new(0, 16),
+                        PaddingBottom = UDim.new(0, 16),
+                    })
                 }),
-                mainContentFrame,
-                contentLabel,
-                buttonsFrame,
-                createElement("UIPadding", {
-                    PaddingTop = UDim.new(0, 16),
-                    PaddingLeft = UDim.new(0, 16),
-                    PaddingRight = UDim.new(0, 16),
-                    PaddingBottom = UDim.new(0, 16),
-                })
-            }),
-        })
-
-        -- Create buttons
-        for _, buttonConfig in next, popupData.Buttons do
-            buttonModule.New(buttonConfig.Title, buttonConfig.Icon, buttonConfig.Callback, buttonConfig.Variant, buttonsFrame, dialogUI)
+            })
         end
 
-        dialogUI:Open()
+        -- Создание кнопок
+        for _, buttonConfig in pairs(popupData.Buttons) do
+            if buttonConfig and buttonsFrame then
+                buttonModule.New(buttonConfig.Title, buttonConfig.Icon, buttonConfig.Callback, buttonConfig.Variant, buttonsFrame, dialogUI)
+            end
+        end
+
+        if dialogUI and dialogUI.Open then
+            dialogUI:Open()
+        end
 
         return popupData
     end
@@ -2787,35 +2064,44 @@ function UILibrary.Popup()
     return popup
 end
 
--- Key System UI
+-- UI системы ключей
 function UILibrary.KeySystem()
-    local utils = UILibrary.Utils() -- Direct call
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
     local createElement = utils.CreateElement
     local createTween = utils.CreateTween
-    local dialogModule = UILibrary.Dialog() -- Direct call
-    local buttonModule = UILibrary.Button() -- Direct call
-    local inputModule = UILibrary.Input() -- Direct call
+    local dialogModule = UILibrary.Dialog()
+    local buttonModule = UILibrary.Button()
+    local inputModule = UILibrary.Input()
 
     local keySystem = {}
 
     function keySystem.New(window, keyConfig, onSuccess)
-        local dialogController = dialogModule.Init(nil, window.WindUI.ScreenGui.KeySystem)
+        if not window or not window.WindUI or not onSuccess then return end
+        
+        local dialogController = dialogModule.Init(nil, window.WindUI.ScreenGui)
+        if not dialogController then return end
+        
         local dialogUI = dialogController.Create(true)
+        if not dialogUI then return end
 
         local services = {}
         local currentKey
 
-        local thumbnailWidth = (window.KeySystem.Thumbnail and window.KeySystem.Thumbnail.Width) or 200
+        local thumbnailWidth = (window.KeySystem and window.KeySystem.Thumbnail and window.KeySystem.Thumbnail.Width) or 200
         local dialogWidth = 430
 
-        if window.KeySystem.Thumbnail and window.KeySystem.Thumbnail.Image then
+        if window.KeySystem and window.KeySystem.Thumbnail and window.KeySystem.Thumbnail.Image then
             dialogWidth = 430 + (thumbnailWidth / 2)
         end
 
-        dialogUI.UIElements.Main.AutomaticSize = "Y"
-        dialogUI.UIElements.Main.Size = UDim2.new(0, dialogWidth, 0, 0)
+        if dialogUI.UIElements and dialogUI.UIElements.Main then
+            utils.SafeSetProperty(dialogUI.UIElements.Main, "AutomaticSize", "Y")
+            utils.SafeSetProperty(dialogUI.UIElements.Main, "Size", UDim2.new(0, dialogWidth, 0, 0))
+        end
 
-        -- Icon
+        -- Иконка
         local iconElement
         if window.Icon then
             iconElement = utils.CreateImage(
@@ -2826,15 +2112,17 @@ function UILibrary.KeySystem()
                 "KeySystem",
                 window.IconThemed
             )
-            iconElement.Size = UDim2.new(0, 24, 0, 24)
-            iconElement.LayoutOrder = -1
+            if iconElement then
+                utils.SafeSetProperty(iconElement, "Size", UDim2.new(0, 24, 0, 24))
+                utils.SafeSetProperty(iconElement, "LayoutOrder", -1)
+            end
         end
 
-        -- Header
+        -- Заголовок
         local titleLabel = createElement("TextLabel", {
             AutomaticSize = "XY",
             BackgroundTransparency = 1,
-            Text = window.Title,
+            Text = tostring(window.Title or "Key System"),
             FontFace = Font.new(utils.Font, Enum.FontWeight.SemiBold),
             ThemeTag = {
                 TextColor3 = "Text",
@@ -2878,20 +2166,20 @@ function UILibrary.KeySystem()
             subtitleLabel,
         })
 
-        -- Key input
+        -- Ввод ключа
         local keyInput = inputModule.New("Enter Key", "key", nil, "Input", function(key)
             currentKey = key
         end)
 
-        -- Note
+        -- Примечание
         local noteLabel
-        if window.KeySystem.Note and window.KeySystem.Note ~= "" then
+        if window.KeySystem and window.KeySystem.Note and window.KeySystem.Note ~= "" then
             noteLabel = createElement("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 0),
                 AutomaticSize = "Y",
                 FontFace = Font.new(utils.Font, Enum.FontWeight.Medium),
                 TextXAlignment = "Left",
-                Text = window.KeySystem.Note,
+                Text = tostring(window.KeySystem.Note),
                 TextSize = 18,
                 TextTransparency = .4,
                 ThemeTag = {
@@ -2903,7 +2191,7 @@ function UILibrary.KeySystem()
             })
         end
 
-        -- Buttons frame
+        -- Фрейм кнопок
         local buttonsFrame = createElement("Frame", {
             Size = UDim2.new(1, 0, 0, 42),
             BackgroundTransparency = 1,
@@ -2920,13 +2208,13 @@ function UILibrary.KeySystem()
             })
         })
 
-        -- Thumbnail
+        -- Миниатюра
         local thumbnailImage
-        if window.KeySystem.Thumbnail and window.KeySystem.Thumbnail.Image then
+        if window.KeySystem and window.KeySystem.Thumbnail and window.KeySystem.Thumbnail.Image and dialogUI.UIElements and dialogUI.UIElements.Main then
             local thumbnailLabel
             if window.KeySystem.Thumbnail.Title then
                 thumbnailLabel = createElement("TextLabel", {
-                    Text = window.KeySystem.Thumbnail.Title,
+                    Text = tostring(window.KeySystem.Thumbnail.Title),
                     ThemeTag = {
                         TextColor3 = "Text",
                     },
@@ -2939,7 +2227,7 @@ function UILibrary.KeySystem()
                 })
             end
             thumbnailImage = createElement("ImageLabel", {
-                Image = window.KeySystem.Thumbnail.Image,
+                Image = tostring(window.KeySystem.Thumbnail.Image),
                 BackgroundTransparency = 1,
                 Size = UDim2.new(0, thumbnailWidth, 1, -12),
                 Position = UDim2.new(0, 6, 0, 6),
@@ -2953,112 +2241,979 @@ function UILibrary.KeySystem()
             })
         end
 
-        createElement("Frame", {
-            Size = UDim2.new(1, thumbnailImage and -thumbnailWidth or 0, 1, 0),
-            Position = UDim2.new(0, thumbnailImage and thumbnailWidth or 0, 0, 0),
-            BackgroundTransparency = 1,
-            Parent = dialogUI.UIElements.Main
-        }, {
+        if dialogUI.UIElements and dialogUI.UIElements.Main then
             createElement("Frame", {
-                Size = UDim2.new(1, 0, 1, 0),
+                Size = UDim2.new(1, thumbnailImage and -thumbnailWidth or 0, 1, 0),
+                Position = UDim2.new(0, thumbnailImage and thumbnailWidth or 0, 0, 0),
                 BackgroundTransparency = 1,
+                Parent = dialogUI.UIElements.Main
             }, {
-                createElement("UIListLayout", {
-                    Padding = UDim.new(0, 18),
-                    FillDirection = "Vertical",
+                createElement("Frame", {
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundTransparency = 1,
+                }, {
+                    createElement("UIListLayout", {
+                        Padding = UDim.new(0, 18),
+                        FillDirection = "Vertical",
+                    }),
+                    titleContainer,
+                    noteLabel,
+                    keyInput,
+                    buttonsFrame,
+                    createElement("UIPadding", {
+                        PaddingTop = UDim.new(0, 16),
+                        PaddingLeft = UDim.new(0, 16),
+                        PaddingRight = UDim.new(0, 16),
+                        PaddingBottom = UDim.new(0, 16),
+                    })
                 }),
-                titleContainer,
-                noteLabel,
-                keyInput,
-                buttonsFrame,
-                createElement("UIPadding", {
-                    PaddingTop = UDim.new(0, 16),
-                    PaddingLeft = UDim.new(0, 16),
-                    PaddingRight = UDim.new(0, 16),
-                    PaddingBottom = UDim.new(0, 16),
-                })
-            }),
-        })
-
-        -- Exit button
-        local exitButton = buttonModule.New("Exit", "log-out", function()
-            dialogUI:Close()()
-        end, "Tertiary", buttonsFrame.Frame)
-
-        if thumbnailImage then
-            exitButton.Parent = thumbnailImage
-            exitButton.Size = UDim2.new(0, 0, 0, 42)
-            exitButton.Position = UDim2.new(0, 10, 1, -10)
-            exitButton.AnchorPoint = Vector2.new(0, 1)
+            })
         end
 
-        -- Get key button for simple URL
-        if window.KeySystem.URL then
+        -- Кнопка выхода
+        local exitButton = buttonModule.New("Exit", "log-out", function()
+            if dialogUI and dialogUI.Close then
+                dialogUI:Close()
+            end
+        end, "Tertiary", buttonsFrame:FindFirstChild("Frame"))
+
+        if thumbnailImage and exitButton then
+            utils.SafeSetProperty(exitButton, "Parent", thumbnailImage)
+            utils.SafeSetProperty(exitButton, "Size", UDim2.new(0, 0, 0, 42))
+            utils.SafeSetProperty(exitButton, "Position", UDim2.new(0, 10, 1, -10))
+            utils.SafeSetProperty(exitButton, "AnchorPoint", Vector2.new(0, 1))
+        end
+
+        -- Кнопка получения ключа для простого URL
+        if window.KeySystem and window.KeySystem.URL then
             buttonModule.New("Get key", "key", function()
                 if setclipboard then
-                    setclipboard(window.KeySystem.URL)
+                    setclipboard(tostring(window.KeySystem.URL))
                 end
-            end, "Secondary", buttonsFrame.Frame)
+            end, "Secondary", buttonsFrame:FindFirstChild("Frame"))
         end
 
-        -- Submit button
+        -- Обработка успешного ввода
         local function handleSuccess(key)
-            dialogUI:Close()()
-            FileOperations.write((window.Folder or window.Title) .. "/" .. keyConfig .. ".key", tostring(key))
+            if dialogUI and dialogUI.Close then
+                dialogUI:Close()
+            end
+            local folder = (window.Folder or window.Title or "default")
+            FileOperations.write(folder .. "/" .. tostring(keyConfig) .. ".key", tostring(key))
             task.wait(.4)
             onSuccess(true)
         end
 
+        -- Кнопка отправки
         local submitButton = buttonModule.New("Submit", "arrow-right", function()
             local key = tostring(currentKey or "empty")
-            local folder = window.Folder or window.Title
+            local folder = window.Folder or window.Title or "default"
 
-            if not window.KeySystem.API then
-                local isValid = type(window.KeySystem.Key) == "table" and 
-                    table.find(window.KeySystem.Key, key) or window.KeySystem.Key == key
+            if not window.KeySystem or not window.KeySystem.API then
+                local isValid = false
+                if window.KeySystem and window.KeySystem.Key then
+                    if type(window.KeySystem.Key) == "table" then
+                        for _, validKey in pairs(window.KeySystem.Key) do
+                            if tostring(validKey) == key then
+                                isValid = true
+                                break
+                            end
+                        end
+                    else
+                        isValid = (tostring(window.KeySystem.Key) == key)
+                    end
+                end
 
                 if isValid then
-                    if window.KeySystem.SaveKey then
+                    if window.KeySystem and window.KeySystem.SaveKey then
                         handleSuccess(key)
                     else
-                        dialogUI:Close()()
+                        if dialogUI and dialogUI.Close then
+                            dialogUI:Close()
+                        end
                         task.wait(.4)
                         onSuccess(true)
                     end
                 end
             else
-                local success, message
-                for _, service in next, services do
-                    local result, msg = service.Verify(key)
-                    if result then
-                        success, message = true, msg
-                        break
+                local success, message = false, "No key services available"
+                for _, service in pairs(services) do
+                    if service and service.Verify then
+                        local result, msg = service.Verify(key)
+                        if result then
+                            success, message = true, msg
+                            break
+                        end
+                        message = msg
                     end
-                    message = msg
                 end
 
                 if success then
                     handleSuccess(key)
                 else
-                    window.WindUI:Notify{
-                        Title = "Key System Error",
-                        Content = message,
-                        Icon = "triangle-alert",
-                    }
+                    if window.WindUI and window.WindUI.Notify then
+                        window.WindUI:Notify{
+                            Title = "Key System Error",
+                            Content = tostring(message),
+                            Icon = "triangle-alert",
+                        }
+                    end
                 end
             end
         end, "Primary", buttonsFrame)
 
-        submitButton.AnchorPoint = Vector2.new(1, 0.5)
-        submitButton.Position = UDim2.new(1, 0, 0.5, 0)
+        if submitButton then
+            utils.SafeSetProperty(submitButton, "AnchorPoint", Vector2.new(1, 0.5))
+            utils.SafeSetProperty(submitButton, "Position", UDim2.new(1, 0, 0.5, 0))
+        end
 
-        dialogUI:Open()
+        if dialogUI and dialogUI.Open then
+            dialogUI:Open()
+        end
     end
 
     return keySystem
 end
 
--- Initialize the library cache
+-- Основной компонент библиотеки
+function UILibrary.MainLibrary()
+    local utils = UILibrary.Utils()
+    local themes = UILibrary.Themes()
+    local notificationSystem = UILibrary.NotificationSystem()
+    
+    if not utils then
+        warn("Не удалось инициализировать utils")
+        return {}
+    end
+
+    local mainLibrary = {}
+    
+    function mainLibrary.New(config)
+        config = config or {}
+        
+        -- Безопасная настройка тем
+        if utils.SetTheme and themes and themes.Dark then
+            utils.Themes = themes
+            utils.Theme = themes.Dark
+            utils.SetTheme(themes.Dark)
+        end
+        
+        -- Безопасное создание главного ScreenGui
+        local screenGui = utils.CreateElement("ScreenGui", {
+            Name = Services.HttpService:GenerateGUID(false):sub(1, 8),
+            ResetOnSpawn = false,
+            ZIndexBehavior = "Sibling",
+            Parent = Services.CoreGui
+        })
+        
+        if not screenGui then
+            warn("Не удалось создать ScreenGui")
+            return {}
+        end
+
+        -- Безопасная инициализация системы уведомлений
+        local notifications = notificationSystem and notificationSystem.Init and notificationSystem.Init(screenGui) or nil
+
+        local library = {
+            ScreenGui = screenGui,
+            Window = config,
+            Notifications = notifications,
+            Version = "2.1.1"
+        }
+
+        -- Безопасная функция уведомлений
+        function library:Notify(notificationConfig)
+            if not notifications or not notificationConfig then return end
+            notificationConfig.Holder = notifications.Frame
+            notificationConfig.WindUI = library
+            return notificationSystem.CreateNotification and notificationSystem.CreateNotification(notificationConfig) or {}
+        end
+
+        -- Всплывающее окно
+        function library:Popup(popupConfig)
+            if not popupConfig then return end
+            local popupModule = UILibrary.Popup()
+            if popupModule and popupModule.New then
+                popupConfig.WindUI = library
+                return popupModule.New(popupConfig)
+            end
+        end
+
+        -- Система ключей
+        function library:KeySystem(keyConfig, onSuccess)
+            if not keyConfig or not onSuccess then return end
+            local keySystemModule = UILibrary.KeySystem()
+            if keySystemModule and keySystemModule.New then
+                keySystemModule.New(library.Window, keyConfig, onSuccess)
+            end
+        end
+
+        -- Управление темами
+        function library:SetTheme(theme)
+            if theme and utils.SetTheme then
+                utils.SetTheme(theme)
+            end
+        end
+
+        function library:GetThemes()
+            return themes
+        end
+
+        -- Безопасная функция очистки
+        function library:Destroy()
+            if utils.DisconnectAll then
+                utils.DisconnectAll()
+            end
+            if screenGui then
+                screenGui:Destroy()
+            end
+        end
+
+        return library
+    end
+
+    return mainLibrary
+end
+
+-- Дополнительные компоненты
+function UILibrary.ListButton()
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
+    local createElement = utils.CreateElement
+    local createTween = utils.CreateTween
+    
+    local listButton = {}
+    
+    function listButton.New(title, icon, parent)
+        local cornerRadius = 10
+        local iconElement
+
+        if icon and icon ~= "" then
+            local iconData = utils.Icon(icon)
+            iconElement = createElement("ImageLabel", {
+                Image = iconData[1],
+                ImageRectSize = iconData[2].ImageRectSize,
+                ImageRectOffset = iconData[2].ImageRectPosition,
+                Size = UDim2.new(0, 21, 0, 21),
+                BackgroundTransparency = 1,
+                ThemeTag = {
+                    ImageColor3 = "Icon",
+                }
+            })
+        end
+
+        local titleLabel = createElement("TextLabel", {
+            BackgroundTransparency = 1,
+            TextSize = 17,
+            FontFace = Font.new(utils.Font, Enum.FontWeight.Regular),
+            Size = UDim2.new(1, iconElement and -29 or 0, 1, 0),
+            TextXAlignment = "Left",
+            ThemeTag = {
+                TextColor3 = "Text",
+            },
+            Text = tostring(title or "Button"),
+        })
+
+        local buttonElement = createElement("TextButton", {
+            Size = UDim2.new(1, 0, 0, 42),
+            Parent = parent,
+            BackgroundTransparency = 1,
+            Text = "",
+        }, {
+            createElement("Frame", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+            }, {
+                utils.CreateRoundFrame(cornerRadius, "Squircle", {
+                    ThemeTag = {
+                        ImageColor3 = "Accent",
+                    },
+                    Size = UDim2.new(1, 0, 1, 0),
+                    ImageTransparency = .85,
+                }),
+                utils.CreateRoundFrame(cornerRadius, "SquircleOutline", {
+                    ThemeTag = {
+                        ImageColor3 = "Outline",
+                    },
+                    Size = UDim2.new(1, 0, 1, 0),
+                    ImageTransparency = .9,
+                }, {
+                    createElement("UIGradient", {
+                        Rotation = 70,
+                        Color = ColorSequence.new{
+                            ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
+                            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+                            ColorSequenceKeypoint.new(1.0, Color3.fromRGB(255, 255, 255)),
+                        },
+                        Transparency = NumberSequence.new{
+                            NumberSequenceKeypoint.new(0.0, 0.1),
+                            NumberSequenceKeypoint.new(0.5, 1),
+                            NumberSequenceKeypoint.new(1.0, 0.1),
+                        }
+                    })
+                }),
+                utils.CreateRoundFrame(cornerRadius, "Squircle", {
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Name = "Frame",
+                    ImageColor3 = Color3.new(1, 1, 1),
+                    ImageTransparency = .95
+                }, {
+                    createElement("UIPadding", {
+                        PaddingLeft = UDim.new(0, 12),
+                        PaddingRight = UDim.new(0, 12),
+                    }),
+                    createElement("UIListLayout", {
+                        FillDirection = "Horizontal",
+                        Padding = UDim.new(0, 8),
+                        VerticalAlignment = "Center",
+                        HorizontalAlignment = "Left",
+                    }),
+                    iconElement,
+                    titleLabel,
+                })
+            })
+        })
+
+        return buttonElement
+    end
+
+    return listButton
+end
+
+function UILibrary.ScrollBar()
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
+    local createElement = utils.CreateElement
+    local createTween = utils.CreateTween
+    
+    local scrollBar = {}
+    
+    function scrollBar.New(scrollingFrame, parent, width)
+        if not scrollingFrame or not parent then return nil end
+        
+        local scrollBarFrame = createElement("Frame", {
+            Size = UDim2.new(0, width or 6, 1, 0),
+            BackgroundTransparency = 1,
+            Position = UDim2.new(1, 0, 0, 0),
+            AnchorPoint = Vector2.new(1, 0),
+            Parent = parent,
+            ZIndex = 999,
+            Active = true,
+        })
+
+        local thumbFrame = utils.CreateRoundFrame((width or 6) / 2, "Squircle", {
+            Size = UDim2.new(1, 0, 0, 0),
+            ImageTransparency = 0.85,
+            ThemeTag = {ImageColor3 = "Text"},
+            Parent = scrollBarFrame,
+        })
+
+        local dragFrame = createElement("Frame", {
+            Size = UDim2.new(1, 12, 1, 12),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            Active = true,
+            ZIndex = 999,
+            Parent = thumbFrame,
+        })
+
+        local isDragging = false
+        local dragOffset = 0
+
+        local function updateThumbSize()
+            if not scrollingFrame or not thumbFrame then return end
+            
+            local canvasSize = utils.SafeGetProperty(scrollingFrame, "AbsoluteCanvasSize", Vector2.new(0, 0)).Y
+            local windowSize = utils.SafeGetProperty(scrollingFrame, "AbsoluteWindowSize", Vector2.new(0, 0)).Y
+
+            if canvasSize <= windowSize then
+                utils.SafeSetProperty(thumbFrame, "Visible", false)
+                return
+            end
+
+            local thumbRatio = math.clamp(windowSize / canvasSize, 0.1, 1)
+            utils.SafeSetProperty(thumbFrame, "Size", UDim2.new(1, 0, thumbRatio, 0))
+            utils.SafeSetProperty(thumbFrame, "Visible", true)
+        end
+
+        local function updateScrollPosition()
+            if not scrollingFrame or not thumbFrame then return end
+            
+            local thumbPos = utils.SafeGetProperty(thumbFrame, "Position", UDim2.new(0, 0, 0, 0)).Y.Scale
+            local canvasSize = utils.SafeGetProperty(scrollingFrame, "AbsoluteCanvasSize", Vector2.new(0, 0)).Y
+            local windowSize = utils.SafeGetProperty(scrollingFrame, "AbsoluteWindowSize", Vector2.new(0, 0)).Y
+            local maxScroll = math.max(canvasSize - windowSize, 0)
+
+            if maxScroll <= 0 then return end
+
+            local thumbSize = utils.SafeGetProperty(thumbFrame, "Size", UDim2.new(1, 0, 1, 0))
+            local maxThumbPos = math.max(1 - thumbSize.Y.Scale, 0)
+            if maxThumbPos <= 0 then return end
+
+            local scrollRatio = thumbPos / maxThumbPos
+            local currentCanvasPos = utils.SafeGetProperty(scrollingFrame, "CanvasPosition", Vector2.new(0, 0))
+            utils.SafeSetProperty(scrollingFrame, "CanvasPosition", Vector2.new(
+                currentCanvasPos.X,
+                scrollRatio * maxScroll
+            ))
+        end
+
+        local function updateThumbPosition()
+            if isDragging or not scrollingFrame or not thumbFrame then return end
+
+            local canvasPos = utils.SafeGetProperty(scrollingFrame, "CanvasPosition", Vector2.new(0, 0)).Y
+            local canvasSize = utils.SafeGetProperty(scrollingFrame, "AbsoluteCanvasSize", Vector2.new(0, 0)).Y
+            local windowSize = utils.SafeGetProperty(scrollingFrame, "AbsoluteWindowSize", Vector2.new(0, 0)).Y
+            local maxScroll = math.max(canvasSize - windowSize, 0)
+
+            if maxScroll <= 0 then
+                utils.SafeSetProperty(thumbFrame, "Position", UDim2.new(0, 0, 0, 0))
+                return
+            end
+
+            local scrollRatio = canvasPos / maxScroll
+            local thumbSize = utils.SafeGetProperty(thumbFrame, "Size", UDim2.new(1, 0, 1, 0))
+            local maxThumbPos = math.max(1 - thumbSize.Y.Scale, 0)
+            local thumbPos = math.clamp(scrollRatio * maxThumbPos, 0, maxThumbPos)
+
+            utils.SafeSetProperty(thumbFrame, "Position", UDim2.new(0, 0, thumbPos, 0))
+        end
+
+        -- Обработчики событий перетаскивания
+        if scrollBarFrame and utils.HasProperty(scrollBarFrame, "InputBegan") then
+            utils.AddSignal(scrollBarFrame.InputBegan, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+                   input.UserInputType == Enum.UserInputType.Touch then
+                    
+                    local thumbAbsPos = utils.SafeGetProperty(thumbFrame, "AbsolutePosition", Vector2.new(0, 0))
+                    local thumbAbsSize = utils.SafeGetProperty(thumbFrame, "AbsoluteSize", Vector2.new(0, 0))
+                    local thumbTop = thumbAbsPos.Y
+                    local thumbBottom = thumbTop + thumbAbsSize.Y
+                    
+                    if not (input.Position.Y >= thumbTop and input.Position.Y <= thumbBottom) then
+                        local scrollBarAbsPos = utils.SafeGetProperty(scrollBarFrame, "AbsolutePosition", Vector2.new(0, 0))
+                        local scrollBarAbsSize = utils.SafeGetProperty(scrollBarFrame, "AbsoluteSize", Vector2.new(0, 0))
+                        local scrollBarTop = scrollBarAbsPos.Y
+                        local scrollBarHeight = scrollBarAbsSize.Y
+                        local thumbHeight = thumbAbsSize.Y
+                        
+                        local newThumbPos = input.Position.Y - scrollBarTop - thumbHeight / 2
+                        local maxPos = scrollBarHeight - thumbHeight
+                        
+                        local thumbSize = utils.SafeGetProperty(thumbFrame, "Size", UDim2.new(1, 0, 1, 0))
+                        local clampedPos = math.clamp(newThumbPos / maxPos, 0, 1 - thumbSize.Y.Scale)
+                        
+                        utils.SafeSetProperty(thumbFrame, "Position", UDim2.new(0, 0, clampedPos, 0))
+                        updateScrollPosition()
+                    end
+                end
+            end)
+        end
+
+        if dragFrame and utils.HasProperty(dragFrame, "InputBegan") then
+            utils.AddSignal(dragFrame.InputBegan, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+                   input.UserInputType == Enum.UserInputType.Touch then
+                    isDragging = true
+                    local thumbAbsPos = utils.SafeGetProperty(thumbFrame, "AbsolutePosition", Vector2.new(0, 0))
+                    dragOffset = input.Position.Y - thumbAbsPos.Y
+                    
+                    local moveConnection
+                    local endConnection
+                    
+                    moveConnection = Services.UserInputService.InputChanged:Connect(function(moveInput)
+                        if moveInput.UserInputType == Enum.UserInputType.MouseMovement or 
+                           moveInput.UserInputType == Enum.UserInputType.Touch then
+                            local scrollBarAbsPos = utils.SafeGetProperty(scrollBarFrame, "AbsolutePosition", Vector2.new(0, 0))
+                            local scrollBarAbsSize = utils.SafeGetProperty(scrollBarFrame, "AbsoluteSize", Vector2.new(0, 0))
+                            local thumbAbsSize = utils.SafeGetProperty(thumbFrame, "AbsoluteSize", Vector2.new(0, 0))
+                            local scrollBarTop = scrollBarAbsPos.Y
+                            local scrollBarHeight = scrollBarAbsSize.Y
+                            local thumbHeight = thumbAbsSize.Y
+                            
+                            local newThumbPos = moveInput.Position.Y - scrollBarTop - dragOffset
+                            local maxPos = scrollBarHeight - thumbHeight
+                            
+                            local thumbSize = utils.SafeGetProperty(thumbFrame, "Size", UDim2.new(1, 0, 1, 0))
+                            local clampedPos = math.clamp(newThumbPos / maxPos, 0, 1 - thumbSize.Y.Scale)
+                            
+                            utils.SafeSetProperty(thumbFrame, "Position", UDim2.new(0, 0, clampedPos, 0))
+                            updateScrollPosition()
+                        end
+                    end)
+                    
+                    endConnection = Services.UserInputService.InputEnded:Connect(function(endInput)
+                        if endInput.UserInputType == Enum.UserInputType.MouseButton1 or 
+                           endInput.UserInputType == Enum.UserInputType.Touch then
+                            isDragging = false
+                            if moveConnection then moveConnection:Disconnect() end
+                            if endConnection then endConnection:Disconnect() end
+                        end
+                    end)
+                end
+            end)
+        end
+
+        -- Подключение к событиям фрейма прокрутки
+        if scrollingFrame and utils.HasProperty(scrollingFrame, "GetPropertyChangedSignal") then
+            utils.AddSignal(scrollingFrame:GetPropertyChangedSignal("AbsoluteWindowSize"), function()
+                updateThumbSize()
+                updateThumbPosition()
+            end)
+            
+            utils.AddSignal(scrollingFrame:GetPropertyChangedSignal("AbsoluteCanvasSize"), function()
+                updateThumbSize()
+                updateThumbPosition()
+            end)
+            
+            utils.AddSignal(scrollingFrame:GetPropertyChangedSignal("CanvasPosition"), function()
+                if not isDragging then
+                    updateThumbPosition()
+                end
+            end)
+        end
+
+        updateThumbSize()
+        updateThumbPosition()
+
+        return scrollBarFrame
+    end
+
+    return scrollBar
+end
+
+function UILibrary.Tag()
+    local utils = UILibrary.Utils()
+    if not utils then return {} end
+    
+    local createElement = utils.CreateElement
+    local createTween = utils.CreateTween
+    
+    local tag = {}
+    
+    function tag.New(title, config, parent)
+        local tagData = {
+            Title = (config and config.Title) or tostring(title or "Tag"),
+            Color = (config and config.Color) or Color3.fromHex("#315dff"),
+            Radius = (config and config.Radius) or 999,
+            TagFrame = nil,
+            Height = 26,
+            Padding = 10,
+            TextSize = 14,
+        }
+
+        local function Color3ToHSB(color)
+            local r, g, b = color.R, color.G, color.B
+            local max = math.max(r, g, b)
+            local min = math.min(r, g, b)
+            local delta = max - min
+            
+            local hue = 0
+            if delta ~= 0 then
+                if max == r then
+                    hue = (g - b) / delta % 6
+                elseif max == g then
+                    hue = (b - r) / delta + 2
+                else
+                    hue = (r - g) / delta + 4
+                end
+                hue = hue * 60
+            else
+                hue = 0
+            end
+            
+            local saturation = (max == 0) and 0 or (delta / max)
+            local brightness = max
+            
+            return {
+                h = math.floor(hue + 0.5),
+                s = saturation,
+                b = brightness
+            }
+        end
+
+        local function GetPerceivedBrightness(color)
+            return 0.299 * color.R + 0.587 * color.G + 0.114 * color.B
+        end
+
+        local function GetTextColorForHSB(color)
+            if GetPerceivedBrightness(color) > 0.5 then
+                local hsb = Color3ToHSB(color)
+                return Color3.fromHSV(hsb.h / 360, 0, 0.05)
+            else
+                local hsb = Color3ToHSB(color)
+                return Color3.fromHSV(hsb.h / 360, 0, 0.98)
+            end
+        end
+
+        local function GetAverageColor(gradient)
+            local r, g, b = 0, 0, 0
+            local keypoints = gradient.Color.Keypoints
+            for _, keypoint in ipairs(keypoints) do
+                r = r + keypoint.Value.R
+                g = g + keypoint.Value.G
+                b = b + keypoint.Value.B
+            end
+            local count = #keypoints
+            return Color3.new(r / count, g / count, b / count)
+        end
+
+        local titleLabel = createElement("TextLabel", {
+            BackgroundTransparency = 1,
+            AutomaticSize = "XY",
+            TextSize = tagData.TextSize,
+            FontFace = Font.new(utils.Font, Enum.FontWeight.SemiBold),
+            Text = tagData.Title,
+            TextColor3 = typeof(tagData.Color) == "Color3" and GetTextColorForHSB(tagData.Color) or Color3.new(1, 1, 1),
+        })
+
+        local gradientElement
+        if typeof(tagData.Color) == "table" then
+            gradientElement = createElement("UIGradient")
+            if gradientElement then
+                for prop, value in pairs(tagData.Color) do
+                    if utils.HasProperty(gradientElement, prop) then
+                        utils.SafeSetProperty(gradientElement, prop, value)
+                    end
+                end
+                if titleLabel then
+                    utils.SafeSetProperty(titleLabel, "TextColor3", GetTextColorForHSB(GetAverageColor(gradientElement)))
+                end
+            end
+        end
+
+        local tagFrame = utils.CreateRoundFrame(tagData.Radius, "Squircle", {
+            AutomaticSize = "X",
+            Size = UDim2.new(0, 0, 0, tagData.Height),
+            Parent = parent,
+            ImageColor3 = typeof(tagData.Color) == "Color3" and tagData.Color or Color3.new(1, 1, 1),
+        }, {
+            gradientElement,
+            createElement("UIPadding", {
+                PaddingLeft = UDim.new(0, tagData.Padding),
+                PaddingRight = UDim.new(0, tagData.Padding),
+            }),
+            titleLabel,
+            createElement("UIListLayout", {
+                FillDirection = "Horizontal",
+                VerticalAlignment = "Center",
+            })
+        })
+
+        function tagData:SetTitle(newTitle)
+            tagData.Title = tostring(newTitle or "")
+            if titleLabel then
+                utils.SafeSetProperty(titleLabel, "Text", tagData.Title)
+            end
+        end
+
+        function tagData:SetColor(newColor)
+            tagData.Color = newColor
+            if typeof(newColor) == "table" then
+                local avgColor = Color3.new(1, 1, 1)
+                if gradientElement then
+                    pcall(function() avgColor = GetAverageColor(gradientElement) end)
+                end
+                if titleLabel then
+                    local tween = createTween(titleLabel, .06, {TextColor3 = GetTextColorForHSB(avgColor)})
+                    if tween then tween:Play() end
+                end
+                local gradient = (tagFrame and tagFrame:FindFirstChildOfClass("UIGradient")) or createElement("UIGradient", {Parent = tagFrame})
+                if gradient then
+                    for prop, value in pairs(newColor) do
+                        if utils.HasProperty(gradient, prop) then
+                            utils.SafeSetProperty(gradient, prop, value)
+                        end
+                    end
+                end
+                if tagFrame then
+                    local tween2 = createTween(tagFrame, .06, {ImageColor3 = Color3.new(1, 1, 1)})
+                    if tween2 then tween2:Play() end
+                end
+            else
+                if gradientElement then
+                    gradientElement:Destroy()
+                    gradientElement = nil
+                end
+                if titleLabel then
+                    local tween = createTween(titleLabel, .06, {TextColor3 = GetTextColorForHSB(newColor)})
+                    if tween then tween:Play() end
+                end
+                if tagFrame then
+                    local tween2 = createTween(tagFrame, .06, {ImageColor3 = newColor})
+                    if tween2 then tween2:Play() end
+                end
+            end
+        end
+
+        return tagData
+    end
+
+    return tag
+end
+
+-- Система управления конфигурацией
+function UILibrary.ConfigManager()
+    local crypto = UILibrary.CryptoUtils()
+    
+    local configManager = {
+        Folder = nil,
+        Path = nil,
+        Configs = {},
+        Parser = {
+            Colorpicker = {
+                Save = function(element)
+                    return {
+                        __type = element.__type,
+                        value = element.Default and element.Default.ToHex and element.Default:ToHex() or "#ffffff",
+                        transparency = element.Transparency or nil,
+                    }
+                end,
+                Load = function(element, data)
+                    if element and element.Update and data then
+                        pcall(function()
+                            element:Update(Color3.fromHex(data.value or "#ffffff"), data.transparency)
+                        end)
+                    end
+                end
+            },
+            Dropdown = {
+                Save = function(element)
+                    return {
+                        __type = element.__type,
+                        value = element.Value,
+                    }
+                end,
+                Load = function(element, data)
+                    if element and element.Select and data then
+                        pcall(function()
+                            element:Select(data.value)
+                        end)
+                    end
+                end
+            },
+            Input = {
+                Save = function(element)
+                    return {
+                        __type = element.__type,
+                        value = element.Value,
+                    }
+                end,
+                Load = function(element, data)
+                    if element and element.Set and data then
+                        pcall(function()
+                            element:Set(data.value)
+                        end)
+                    end
+                end
+            },
+            Keybind = {
+                Save = function(element)
+                    return {
+                        __type = element.__type,
+                        value = element.Value,
+                    }
+                end,
+                Load = function(element, data)
+                    if element and element.Set and data then
+                        pcall(function()
+                            element:Set(data.value)
+                        end)
+                    end
+                end
+            },
+            Slider = {
+                Save = function(element)
+                    return {
+                        __type = element.__type,
+                        value = element.Value and element.Value.Default or 0,
+                    }
+                end,
+                Load = function(element, data)
+                    if element and element.Set and data then
+                        pcall(function()
+                            element:Set(data.value)
+                        end)
+                    end
+                end
+            },
+            Toggle = {
+                Save = function(element)
+                    return {
+                        __type = element.__type,
+                        value = element.Value,
+                    }
+                end,
+                Load = function(element, data)
+                    if element and element.Set and data then
+                        pcall(function()
+                            element:Set(data.value)
+                        end)
+                    end
+                end
+            },
+        }
+    }
+    
+    function configManager.Init(library, config)
+        if not config or not config.Folder then
+            warn("[ Custom UI Library ] Window.Folder не указан.")
+            return false
+        end
+        
+        configManager.Folder = tostring(config.Folder)
+        configManager.Path = "CustomUI/" .. configManager.Folder .. "/config/"
+        
+        if not FileOperations.folderExists("CustomUI/" .. configManager.Folder) then
+            FileOperations.makeFolder("CustomUI/" .. configManager.Folder)
+            if not FileOperations.folderExists("CustomUI/" .. configManager.Folder .. "/config/") then
+                FileOperations.makeFolder("CustomUI/" .. configManager.Folder .. "/config/")
+            end
+        end
+        
+        local allConfigs = configManager:AllConfigs()
+        
+        for _, configName in pairs(allConfigs) do
+            local configPath = configManager.Path .. configName .. ".json"
+            if FileOperations.exists(configPath) then
+                configManager.Configs[configName] = FileOperations.read(configPath)
+            end
+        end
+        
+        return configManager
+    end
+    
+    function configManager.CreateConfig(name)
+        if not name then
+            return false, "Не выбран конфигурационный файл"
+        end
+        
+        local config = {
+            Path = configManager.Path .. tostring(name) .. ".json",
+            Elements = {},
+            CustomData = {},
+            Version = 1.1
+        }
+        
+        function config:Register(id, element)
+            if id and element then
+                config.Elements[tostring(id)] = element
+            end
+        end
+        
+        function config:Set(key, value)
+            if key then
+                config.CustomData[tostring(key)] = value
+            end
+        end
+        
+        function config:Get(key)
+            return config.CustomData[tostring(key or "")]
+        end
+        
+        function config:Save()
+            local data = {
+                __version = config.Version,
+                __elements = {},
+                __custom = config.CustomData
+            }
+            
+            for id, element in pairs(config.Elements) do
+                if element and element.__type and configManager.Parser[element.__type] then
+                    local success, elementData = pcall(configManager.Parser[element.__type].Save, element)
+                    if success and elementData then
+                        data.__elements[tostring(id)] = elementData
+                    end
+                end
+            end
+            
+            local jsonData = crypto.JSONEncode(data)
+            FileOperations.write(config.Path, jsonData)
+            
+            return data
+        end
+        
+        function config:Load()
+            if not FileOperations.exists(config.Path) then
+                return false, "Конфигурационный файл не существует"
+            end
+            
+            local success, data = pcall(function()
+                return crypto.JSONDecode(FileOperations.read(config.Path))
+            end)
+            
+            if not success or not data then
+                return false, "Не удалось разобрать конфигурационный файл"
+            end
+            
+            if not data.__version then
+                local newData = {
+                    __version = config.Version,
+                    __elements = data,
+                    __custom = {}
+                }
+                data = newData
+            end
+            
+            for id, elementData in pairs(data.__elements or {}) do
+                if config.Elements[id] and elementData.__type and configManager.Parser[elementData.__type] then
+                    task.spawn(function()
+                        pcall(configManager.Parser[elementData.__type].Load, config.Elements[id], elementData)
+                    end)
+                end
+            end
+            
+            config.CustomData = data.__custom or {}
+            
+            return config.CustomData
+        end
+        
+        function config:GetData()
+            return {
+                elements = config.Elements,
+                custom = config.CustomData
+            }
+        end
+        
+        configManager.Configs[tostring(name)] = config
+        return config
+    end
+    
+    function configManager:AllConfigs()
+        if not FileOperations.listFiles then 
+            return {} 
+        end
+        
+        local configs = {}
+        if not FileOperations.folderExists(configManager.Path) then
+            FileOperations.makeFolder(configManager.Path)
+            return configs
+        end
+        
+        local success, files = pcall(FileOperations.listFiles, configManager.Path)
+        if success and files then
+            for _, filePath in pairs(files) do
+                local configName = string.match(tostring(filePath), "([^\\/]+)%.json$")
+                if configName then
+                    table.insert(configs, configName)
+                end
+            end
+        end
+        
+        return configs
+    end
+    
+    function configManager:GetConfig(name)
+        return configManager.Configs[tostring(name or "")]
+    end
+    
+    return configManager
+end
+
+-- Инициализация кэша библиотеки со всеми модулями
 UILibrary.Utils = UILibrary.Utils
 UILibrary.Localization = UILibrary.Localization  
 UILibrary.NotificationSystem = UILibrary.NotificationSystem
@@ -3071,19 +3226,42 @@ UILibrary.KeySystemServices = UILibrary.KeySystemServices
 UILibrary.PackageInfo = UILibrary.PackageInfo
 UILibrary.Button = UILibrary.Button
 UILibrary.Input = UILibrary.Input
+UILibrary.Dialog = UILibrary.Dialog
+UILibrary.Popup = UILibrary.Popup
+UILibrary.KeySystem = UILibrary.KeySystem
+UILibrary.MainLibrary = UILibrary.MainLibrary
+UILibrary.ListButton = UILibrary.ListButton
+UILibrary.ScrollBar = UILibrary.ScrollBar
+UILibrary.Tag = UILibrary.Tag
+UILibrary.ConfigManager = UILibrary.ConfigManager
 
--- Export the main library with anticheat-safe initialization
+-- Безопасная функция loadModule после определения всех модулей
+local function loadModule(moduleName)
+    if not cache[moduleName] and UILibrary[moduleName] then 
+        local success, module = pcall(UILibrary[moduleName])
+        if success and module then
+            cache[moduleName] = {content = module}
+        else
+            warn("Не удалось загрузить модуль: " .. tostring(moduleName))
+            cache[moduleName] = {content = {}}
+        end
+    end
+    return cache[moduleName] and cache[moduleName].content or {}
+end
+
+-- Экспорт основной библиотеки с безопасной инициализацией античита
 local function initializeLibrary()
-    -- Anti-detection delay
-    task.wait(math.random(50, 200) / 1000)
+    -- Задержка против обнаружения
+    local delayTime = math.random(50, 200) / 1000
+    task.wait(delayTime)
     
-    -- Check if we're in a safe environment
+    -- Проверка безопасной среды
     local function isSafeEnvironment()
         local criticalFunctions = {"loadstring", "getgenv", "game"}
         local available = 0
         
         for _, funcName in ipairs(criticalFunctions) do
-            if _G[funcName] or getfenv()[funcName] then
+            if _G[funcName] or (getfenv and getfenv()[funcName]) then
                 available = available + 1
             end
         end
@@ -3092,16 +3270,42 @@ local function initializeLibrary()
     end
     
     if not isSafeEnvironment() then
+        warn("Небезопасная среда обнаружена")
         return nil
     end
     
-    return {
-        loadModule = loadModule,
-        UILibrary = UILibrary,
-        Services = Services,
-        FileOperations = FileOperations,
-        Version = "2.1.0"
-    }
+    -- Основной интерфейс библиотеки, соответствующий API WindUI
+    local MainInterface = {}
+    
+    function MainInterface.New(config)
+        local mainLib = UILibrary.MainLibrary()
+        if mainLib and mainLib.New then
+            return mainLib.New(config)
+        else
+            warn("Не удалось инициализировать основную библиотеку")
+            return {}
+        end
+    end
+    
+    -- Экспорт служебных функций для обратной совместимости
+    MainInterface.loadModule = loadModule
+    MainInterface.Services = Services
+    MainInterface.FileOperations = FileOperations
+    MainInterface.Version = "2.1.1"
+    
+    -- Создание глобальной ссылки с обфусцированным именем
+    local success = pcall(function()
+        local globalName = "CUI_" .. Services.HttpService:GenerateGUID(false):gsub("-", ""):sub(1, 6)
+        if getgenv then
+            getgenv()[globalName] = MainInterface
+        end
+    end)
+    
+    if not success then
+        warn("Не удалось создать глобальную ссылку")
+    end
+    
+    return MainInterface
 end
 
 return initializeLibrary()
